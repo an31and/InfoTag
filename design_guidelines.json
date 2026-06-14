@@ -1,0 +1,128 @@
+{
+  "project_name": "TagIT",
+  "theme": "light_dark_toggle",
+  "archetype": "1_organic_earthy_mixed_with_swiss_clarity",
+  "design_philosophy": {
+    "core_principles": [
+      "Ultra-lightweight and mobile-first (optimized for fast loading on 3G/4G).",
+      "Civic and trustworthy: Interface should feel like a reliable public service, not a corporate sales pitch.",
+      "Emergency clarity: Critical medical information must surface instantly with zero cognitive load.",
+      "Made in India: Subtle premium nods to Indian identity without kitsch (e.g., Ashoka Navy, Terracotta accents)."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "headings": "Outfit",
+      "body_and_regional": "IBM Plex Sans (ensures high-quality Devanagari/Hindi rendering)",
+      "mono": "JetBrains Mono"
+    },
+    "scale": {
+      "h1": "text-4xl sm:text-5xl font-black tracking-tight",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm text-muted-foreground",
+      "emergency_alert": "text-2xl font-black tracking-widest uppercase text-red-600"
+    },
+    "rules": [
+      "Do not use generic fonts like Inter or Roboto for headings.",
+      "Ensure strong tracking and legibility for medical data.",
+      "Use font-black for emergency call-to-actions to maximize visibility."
+    ]
+  },
+  "color_system": {
+    "light_mode": {
+      "background": "#FAFAFA",
+      "foreground": "#0A0A0A",
+      "surface": "#FFFFFF",
+      "primary": "#0F172A",
+      "primary_foreground": "#FFFFFF",
+      "accent_saffron": "#E25822",
+      "emergency_red": "#DC2626",
+      "border": "#E5E5E5"
+    },
+    "dark_mode": {
+      "background": "#09090B",
+      "foreground": "#FAFAFA",
+      "surface": "#18181B",
+      "primary": "#F8FAFC",
+      "primary_foreground": "#0F172A",
+      "accent_saffron": "#F97316",
+      "emergency_red": "#EF4444",
+      "border": "#27272A"
+    },
+    "rules": [
+      "CRITICAL: The 'emergency_red' color is STRICTLY reserved for Medical/Emergency UI and the 'Call Emergency Contact' button. Never use it for decorative elements or standard cancel buttons.",
+      "Maintain WCAG AA minimum 4.5:1 contrast ratio, especially for the public Finder page.",
+      "Avoid muddy grays; tint neutral greys slightly with blue (cool)."
+    ]
+  },
+  "spacing_and_layout": {
+    "grid_system": "mode_b_control_room",
+    "spacing_scale": "generous_padding_with_dense_data",
+    "rules": [
+      "Finder Page: Single column, stacked layout with massive touch targets (h-14 or h-16 buttons).",
+      "Dashboard: Grid-cols-1 md:grid-cols-3. Cardless or minimal 1px border cards. Use full height children to prevent jagged bottoms.",
+      "Medical Mode: Add generous padding (p-6 to p-8) around critical fields to prevent misreading."
+    ]
+  },
+  "components": {
+    "buttons": {
+      "primary": "Solid Ashoka Navy background, white text, subtle hover lift (-translate-y-1).",
+      "emergency": "Solid Signal Red background, white text, massive touch area, sticky to bottom on mobile.",
+      "quick_action": "Outline buttons with muted foreground text for 'Wrong parking' or 'Headlight on'.",
+      "shape": "rounded-xl (friendly but structured)"
+    },
+    "surfaces": {
+      "health_data": "Flat solid surfaces only. NO glassmorphism for medical data to ensure absolute clarity.",
+      "owner_dashboard": "Neumorphic tactile or crisp 1px borders with subtle shadow."
+    },
+    "icons": {
+      "library": "lucide-react",
+      "usage": "Use thick stroke-width (2.5) for emergency icons, standard (2.0) for dashboard."
+    }
+  },
+  "motion_and_interaction": {
+    "transitions": "Fast and purposeful. 0.15s ease-in-out for buttons.",
+    "loading": "Pulse animations on skeleton loaders instead of spinners to feel faster on poor connections.",
+    "emergency_trigger": "Haptic feedback pattern (if supported) and immediate visual color shift."
+  },
+  "specific_flows": {
+    "finder_page": {
+      "design": "Ultra-minimalist. Logo at top, big scanning success message, huge quick action buttons, language toggle (EN/HI) prominent at top right.",
+      "medical_mode": "Screen background shifts to a subtle red tint. Massive typography for Blood Group and Allergies. Bottom 20% of screen is a fixed 'CALL EMERGENCY CONTACT' button."
+    },
+    "owner_dashboard": {
+      "design": "Clean, tabular, categorized bento grid. Quick stats at top (Total Scans, Active Tags), Tabbed view for Vehicle, Pet, Luggage, Keys, Medical.",
+      "qr_generator": "Print-preview style layout. Black and white high-contrast previews of A4, ID-card, and Keyring layouts."
+    }
+  },
+  "media_and_assets": {
+    "rules": [
+      "Use SVG icons over raster images to maintain the 'ultra-lightweight' strict requirement.",
+      "No heavy hero images on the Finder app; rely on typography and brand colors."
+    ],
+    "image_urls": {
+      "landing_hero_abstract": {
+        "url": "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1200&q=80",
+        "description": "Subtle, trustworthy gradient/abstract background for the marketing landing page hero."
+      },
+      "medical_trust": {
+        "url": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+        "description": "Medical professional or sterile environment for the Medical Disclaimer/Info page."
+      }
+    }
+  },
+  "testing": {
+    "attributes": "All interactive elements MUST use data-testid attributes (e.g., data-testid='finder-call-owner-btn', data-testid='emergency-call-btn')."
+  },
+  "instructions_to_main_agent": [
+    "Install 'lucide-react' for all icons.",
+    "Configure Tailwind with the provided color system. Extend the theme with 'primary', 'accent', and 'emergency' colors.",
+    "Use standard Shadcn UI for the Owner Dashboard (Tabs, Cards, Tables, Dialogs), but strip the borders to make it feel cleaner (Cardless approach).",
+    "For the public Finder Page, write raw HTML/Tailwind to keep the bundle size minimal. Do NOT use heavy client-side state if avoidable.",
+    "Implement internationalization (i18n) structure early for English and Hindi (Devanagari).",
+    "Build the QR PDF generator using standard print CSS media queries or lightweight jsPDF.",
+    "Ensure 'Made in India' is subtly placed in the footer of public pages."
+  ]
+}
