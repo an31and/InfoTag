@@ -16,7 +16,7 @@ import TagQRPage from "@/pages/TagQR";
 import TagMedicalPage from "@/pages/TagMedical";
 import InboxPage from "@/pages/Inbox";
 import SettingsPage from "@/pages/Settings";
-import FinderPage from "@/pages/Finder";
+import { FinderRedirect } from "@/pages/FinderRedirect";
 import ClaimPage from "@/pages/Claim";
 import { MedicalDisclaimerPage, PrivacyPage, TermsPage } from "@/pages/Legal";
 
@@ -40,7 +40,7 @@ function AppRouter() {
             <Route path="/signup" element={<AuthPage mode="signup" />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
-            <Route path="/tag/:slug" element={<FinderPage />} />
+            <Route path="/tag/:slug" element={<FinderRedirect />} />
             <Route path="/claim/:slug" element={<ClaimPage />} />
 
             <Route path="/privacy" element={<PrivacyPage />} />

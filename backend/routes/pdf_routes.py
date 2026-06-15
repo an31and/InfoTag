@@ -68,7 +68,7 @@ async def generate_pdf(
     if not doc:
         raise HTTPException(status_code=404, detail="Tag not found")
 
-    url = f"{_site_url()}/tag/{doc['slug']}"
+    url = f"{_site_url()}/api/finder/{doc['slug']}"
     pil = _qr_image(url)
     caption = CONTEXT_CAPTIONS.get(doc.get("type", "general"), "Scan if found")
     label = doc.get("display_name") or doc.get("label") or "TagIT"
@@ -133,7 +133,7 @@ def _draw_a4_stickers(buf, pil, slug, label, caption, tag_type) -> None:
             c.setFont("Helvetica-Bold", 8)
             c.drawCentredString(x + cell_w / 2, y + 10 * mm, caption.upper()[:38])
             c.setFont("Helvetica", 6.5)
-            c.drawCentredString(x + cell_w / 2, y + 6.5 * mm, f"or visit tagit.in/tag/{slug}")
+            c.drawCentredString(x + cell_w / 2, y + 6.5 * mm, f"or visit tagit.in/api/finder/{slug}")
             c.setFont("Helvetica-Oblique", 6)
             c.setFillColor(HexColor("#666666"))
             c.drawCentredString(x + cell_w / 2, y + 3.5 * mm, "Privacy-first • Made in India")
@@ -183,7 +183,7 @@ def _draw_id_card(buf, pil, slug, label, caption, tag_type) -> None:
     c.drawString(text_x, y + card_h - 16 * mm, caption[:32])
     c.setFont("Helvetica", 6.5)
     c.drawString(text_x, y + 14 * mm, "Scan the QR with any phone camera.")
-    c.drawString(text_x, y + 10 * mm, f"or visit tagit.in/tag/{slug}")
+    c.drawString(text_x, y + 10 * mm, f"or visit tagit.in/api/finder/{slug}")
     c.setFillColor(HexColor("#666666"))
     c.setFont("Helvetica-Oblique", 6)
     c.drawString(text_x, y + 6 * mm, "No app needed for the finder.")

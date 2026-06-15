@@ -127,7 +127,7 @@ async def tag_qr_png(tag_id: str, user: dict = Depends(_current_user_dep)) -> St
     doc = await db.tags.find_one({"id": tag_id, "owner_id": user["id"]}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Tag not found")
-    url = f"{_site_url()}/tag/{doc['slug']}"
+    url = f"{_site_url()}/api/finder/{doc['slug']}"
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,

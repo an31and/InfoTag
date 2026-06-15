@@ -28,7 +28,7 @@ export default function TagQRPage() {
         return <div className="text-muted-foreground animate-pulse-soft">{t("common.loading")}</div>;
     }
 
-    const finderUrl = `${window.location.origin}/tag/${tag.slug}`;
+    const finderUrl = `${window.location.origin}/api/finder/${tag.slug}`;
     const qrSrc = `${API_BASE}/tags/${tag.id}/qr.png`;
 
     return (

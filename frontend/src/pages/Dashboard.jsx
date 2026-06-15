@@ -190,7 +190,7 @@ function TagCard({ tag }) {
     const { t } = useI18n();
     const meta = TYPE_META[tag.type] || TYPE_META.general;
     const Icon = meta.icon;
-    const finderUrl = `${window.location.origin}/tag/${tag.slug}`;
+    const finderUrl = `${window.location.origin}/api/finder/${tag.slug}`;
     return (
         <div className="surface p-5 flex flex-col gap-4 animate-rise" data-testid={`tag-card-${tag.id}`}>
             <div className="flex items-start justify-between gap-3">
