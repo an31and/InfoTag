@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Bike,
     Briefcase,
+    HandHeart,
     HeartPulse,
     Inbox,
     KeyRound,
@@ -26,6 +27,7 @@ const TYPE_META = {
     luggage: { icon: Briefcase, color: "text-sky-500", bg: "bg-sky-500/10" },
     keys: { icon: KeyRound, color: "text-amber-500", bg: "bg-amber-500/10" },
     medical: { icon: HeartPulse, color: "text-destructive", bg: "bg-destructive/10" },
+    special: { icon: HandHeart, color: "text-sky-600", bg: "bg-sky-500/10" },
     general: { icon: TagIcon, color: "text-foreground", bg: "bg-muted" },
 };
 
@@ -104,7 +106,7 @@ export default function DashboardPage() {
             {/* Filter tabs */}
             <Tabs value={filter} onValueChange={setFilter} className="w-full">
                 <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted/50">
-                    {["all", "vehicle", "pet", "luggage", "keys", "medical", "general"].map((k) => (
+                    {["all", "vehicle", "pet", "luggage", "keys", "medical", "special", "general"].map((k) => (
                         <TabsTrigger key={k} value={k} className="rounded-full text-sm px-4 py-1.5" data-testid={`tab-${k}`}>
                             {t(`dashboard.${k}`)}
                         </TabsTrigger>

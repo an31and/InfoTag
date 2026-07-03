@@ -1,4 +1,4 @@
-// InfoTag — lightweight service worker.
+// Info-Tag — lightweight service worker.
 // Caches the app shell only; never the API responses.
 const CACHE = "infotag-shell-v1";
 const SHELL = ["/", "/index.html", "/manifest.json"];
@@ -28,4 +28,41 @@ self.addEventListener("fetch", (event) => {
         );
         return;
     }
+});
+
+// ---------------------------------------------------------------------------
+// Web Push — free scan/message alerts (see Settings → Phone & alerts)
+// ---------------------------------------------------------------------------
+self.addEventListener("push", (event) => {
+    let payload = {};
+    try {
+        payload = event.data ? event.data.json() : {};
+    } catch {
+        payload = { title: "Info-Tag", body: event.data ? event.data.text() : "" };
+    }
+    const title = payload.title || "Info-Tag";
+    event.waitUntil(
+        self.registration.showNotification(title, {
+            body: payload.body || "",
+            icon: "/logo192.png",
+            badge: "/logo192.png",
+            data: { url: payload.url || "/inbox" },
+        }),
+    );
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    const url = (event.notification.data && event.notification.data.url) || "/inbox";
+    event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+            for (const w of wins) {
+                if ("focus" in w) {
+                    w.navigate(url);
+                    return w.focus();
+                }
+            }
+            return clients.openWindow(url);
+        }),
+    );
 });

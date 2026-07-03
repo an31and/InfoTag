@@ -1,6 +1,6 @@
 """Sponsor a tag — civic enhancement.
 
-A free public-service product like InfoTag scales when companies and citizens
+A free public-service product like Info-Tag scales when companies and citizens
 sponsor printed-sticker batches that get distributed for free (e.g. at
 pet adoption camps, RTOs, hospitals).  This module collects sponsor
 intents so we can stay zero-cost for end users.

@@ -7,6 +7,7 @@ import {
     LanguageSection,
     NotificationsSection,
     ProfileSection,
+    PushSection,
 } from "../components/settings/SettingsParts";
 import api, { formatApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -67,6 +68,7 @@ export default function SettingsPage() {
             <h1 className="font-display text-3xl font-black tracking-tight">{t("settings.title")}</h1>
             <ProfileSection me={me} setMe={setMe} save={save} t={t} />
             <ContactSection me={me} setMe={setMe} save={save} t={t} />
+            <PushSection t={t} />
             <NotificationsSection me={me} save={save} t={t} />
             <LanguageSection lang={lang} setLang={setLang} langs={langs} save={save} t={t} />
             <DataPrivacySection onExport={onExport} onDelete={onDelete} t={t} />

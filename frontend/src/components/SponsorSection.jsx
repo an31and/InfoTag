@@ -53,7 +53,7 @@ export function SponsorSection() {
                         Fund printed stickers, free for an Indian family.
                     </h2>
                     <p className="mt-4 text-muted-foreground">
-                        InfoTag is and will always be free. But weather-proof printed stickers cost money. Sponsor a batch — we'll add a small "Sponsored by you" footer on the PDF and ship them to RTOs, pet shelters, hospitals and senior-citizen groups.
+                        Info-Tag is and will always be free. But weather-proof printed stickers cost money. Sponsor a batch — we'll add a small "Sponsored by you" footer on the PDF and ship them to RTOs, pet shelters, hospitals and senior-citizen groups.
                     </p>
                     {stats && (
                         <div className="mt-6 flex gap-6">

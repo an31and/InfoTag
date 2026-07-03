@@ -1,7 +1,7 @@
-# InfoTag — Product Requirements Document
+# Info-Tag — Product Requirements Document
 
 ## Original problem statement
-InfoTag is a privacy-first, no-app (for finders), mobile-first, lightweight,
+Info-Tag is a privacy-first, no-app (for finders), mobile-first, lightweight,
 Made-in-India, free public-service smart-tag ecosystem.  Mission: help ordinary
 people recover lost items (vehicles, pets, luggage, keys) and let first
 responders read critical medical info in seconds — free of cost.

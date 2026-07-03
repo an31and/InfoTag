@@ -52,7 +52,7 @@ export function AuthVisualPanel({ t }) {
             <div className="absolute inset-0 bg-grid opacity-10" />
             <Link to="/" className="relative inline-flex items-center gap-2 font-display font-black text-2xl" data-testid="auth-brand">
                 <Tag className="h-6 w-6 text-accent" strokeWidth={2.5} />
-                Info<span className="text-accent">Tag</span>
+                Info-<span className="text-accent">Tag</span>
             </Link>
             <div className="relative max-w-md space-y-4">
                 <p className="font-display text-3xl font-bold tracking-tight leading-tight">

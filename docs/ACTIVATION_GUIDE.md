@@ -1,4 +1,4 @@
-# InfoTag — Alert Channels Activation Guide
+# Info-Tag — Alert Channels Activation Guide
 
 *How to switch on Email, WhatsApp, SMS and Masked Calling — step by step.*
 
@@ -9,7 +9,7 @@ still works perfectly, it just skips that channel.
 
 ```
                  ┌────────────────────────────────────────────┐
- Finder scans →  │  InfoTag backend (notifications.py)        │
+ Finder scans →  │  Info-Tag backend (notifications.py)        │
  sends message   │                                            │
                  │  notify_owner() fans out to:               │
                  │   ├─ Email     → if SMTP/SendGrid vars set │
@@ -24,6 +24,7 @@ still works perfectly, it just skips that channel.
 |---|---|---|---|
 | **Email (SMTP/Gmail)** | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Free | Any mailbox provider (Gmail app password is easiest) |
 | **Email (SendGrid)** | `SENDGRID_API_KEY`, `EMAIL_FROM` | Free tier: 100 mails/day | sendgrid.com |
+| **Web Push** | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Free forever | `npx web-push generate-vapid-keys` |
 | **WhatsApp** | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Free (service conversations) | developers.facebook.com |
 | **SMS** | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | Paid (~₹0.5–7/SMS) | twilio.com |
 | **Masked calls** | same three Twilio vars | Paid (per-minute voice) | twilio.com |
@@ -63,7 +64,7 @@ emails the owner. Two options — pick ONE.
 1. Use (or create) a Gmail account for the app, e.g. `infotag.alerts@gmail.com`.
 2. Turn on **2-Step Verification**: myaccount.google.com → Security.
 3. Create an **App Password**: myaccount.google.com/apppasswords →
-   name it "InfoTag" → Google shows a 16-character password. Copy it.
+   name it "Info-Tag" → Google shows a 16-character password. Copy it.
 4. Add to `backend/.env`:
 
    ```env
@@ -110,16 +111,16 @@ The tag owner's inbox (and email) should receive it.
 
 ## 2. WhatsApp — Meta WhatsApp Cloud API (free tier)
 
-This lets InfoTag send owners a WhatsApp message every time their tag gets a
+This lets Info-Tag send owners a WhatsApp message every time their tag gets a
 finder action. Meta's Cloud API is free for "service conversations"
-(user-initiated / utility messages within limits), which fits InfoTag's tiny
+(user-initiated / utility messages within limits), which fits Info-Tag's tiny
 volume perfectly.
 
 ### Step-by-step
 
 1. **Create a Meta developer account**: developers.facebook.com → Get Started.
 2. **Create an app**: My Apps → Create App → type **Business** → name it
-   "InfoTag Alerts".
+   "Info-Tag Alerts".
 3. **Add the WhatsApp product**: on the app dashboard, find *WhatsApp* →
    **Set up**. Meta auto-creates a **test business phone number** for you.
 4. On *WhatsApp → API Setup* you'll see the two values you need:
@@ -137,7 +138,7 @@ volume perfectly.
    ```
 
 7. Restart. `/api/features` → `"whatsapp": true`.
-8. In the InfoTag app: **Settings → Phone & alerts** → enter your phone with
+8. In the Info-Tag app: **Settings → Phone & alerts** → enter your phone with
    country code (+91…) → switch ON **"WhatsApp me finder alerts"**.
 9. Scan a tag, send a message — the owner gets a WhatsApp.
 
@@ -158,16 +159,16 @@ volume perfectly.
    ask owners to send one "hi" to your WhatsApp number when enabling alerts
    (this also opts them in properly). Templates can be added later.
 
-### Test the token directly (before touching InfoTag)
+### Test the token directly (before touching Info-Tag)
 
 ```bash
 curl -X POST "https://graph.facebook.com/v19.0/<PHONE_NUMBER_ID>/messages" \
   -H "Authorization: Bearer <WHATSAPP_TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"messaging_product":"whatsapp","to":"91XXXXXXXXXX","type":"text","text":{"body":"Hello from InfoTag!"}}'
+  -d '{"messaging_product":"whatsapp","to":"91XXXXXXXXXX","type":"text","text":{"body":"Hello from Info-Tag!"}}'
 ```
 
-If this works, InfoTag's alerts will work.
+If this works, Info-Tag's alerts will work.
 
 ---
 
@@ -198,13 +199,52 @@ to reach owners with no internet.
 > (Jio/Airtel/Vodafone DLT portals) and connect it to your SMS provider.
 > Twilio international routes work without DLT but cost more (~₹5–7/SMS).
 > Cheaper India-first alternatives when you're ready: **MSG91**,
-> **Fast2SMS**, **Kaleyra** (~₹0.15–0.25/SMS after DLT). Since InfoTag treats
+> **Fast2SMS**, **Kaleyra** (~₹0.15–0.25/SMS after DLT). Since Info-Tag treats
 > SMS as one gated function (`send_sms` in `backend/notifications.py`),
 > swapping Twilio for MSG91 later is a ~20-line change in one file.
 > Trial-account note: Twilio trials can only SMS/call numbers you verify in
 > the Twilio console first.
 
 ---
+
+## 3.5 Web Push — free phone notifications (no phone number needed!)
+
+Web Push pops a notification on the owner's phone/laptop the moment a tag is
+scanned or a finder writes — delivered by the browser vendors, so it is
+**free forever**. It needs one thing: a VAPID key pair (a public + private
+key that proves the pushes come from your server).
+
+1. **Generate keys once** (either command works):
+
+   ```bash
+   npx web-push generate-vapid-keys
+   # or, using the Python tool installed with the backend:
+   vapid --gen        # prints private_key.pem/public_key.pem
+   ```
+
+   The `npx` route prints the two base64 strings directly — easiest.
+
+2. Add to `backend/.env`:
+
+   ```env
+   VAPID_PUBLIC_KEY=BPz...your-public-key...
+   VAPID_PRIVATE_KEY=x3T...your-private-key...
+   VAPID_SUBJECT=mailto:an.31and@gmail.com
+   ```
+
+3. Restart. `/api/features` → `"web_push": true`.
+4. Each owner then goes to **Settings → Phone notifications (free)** →
+   **Turn on notifications** → the browser asks permission → a test
+   notification arrives immediately.
+5. What triggers a push after that:
+   - a finder message / quick action / callback request → always
+   - a scan → only if the owner enabled "notify me on every scan"
+
+Notes:
+- Requires HTTPS (or localhost) — push does not work on plain http.
+- On iPhone, the owner must first **Add to Home Screen** (install the PWA);
+  iOS only allows push for installed web apps (iOS 16.4+).
+- Dead subscriptions (uninstalled browsers) are pruned automatically.
 
 ## 4. Masked calling — the same Twilio account
 

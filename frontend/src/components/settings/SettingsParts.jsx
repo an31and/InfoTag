@@ -1,7 +1,11 @@
 /**
  * Settings sub-components.  Extracted from the 131-line SettingsPage.
  */
-import { Download, MessageSquare, Phone, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, BellRing, Download, MessageSquare, Phone, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+import api from "../../lib/api";
 
 import {
     AlertDialog,
@@ -95,6 +99,101 @@ export function ContactSection({ me, setMe, save, t }) {
                 />
             </Row>
             <p className="text-xs text-muted-foreground">{t("settings.alerts_note")}</p>
+        </section>
+    );
+}
+
+/* ------------------------------------------------------------------ */
+/* Web Push — free phone notifications, no provider needed             */
+/* ------------------------------------------------------------------ */
+function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = window.atob(base64);
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+export function PushSection({ t }) {
+    const supported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window;
+    const [serverKey, setServerKey] = useState(null); // null=loading, ""=disabled
+    const [subscribed, setSubscribed] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        if (!supported) return;
+        api.get("/push/public-key")
+            .then(({ data }) => setServerKey(data.enabled ? data.public_key : ""))
+            .catch(() => setServerKey(""));
+        navigator.serviceWorker.ready
+            .then((reg) => reg.pushManager.getSubscription())
+            .then((sub) => setSubscribed(!!sub))
+            .catch(() => {});
+    }, [supported]);
+
+    const enable = async () => {
+        setBusy(true);
+        try {
+            const perm = await Notification.requestPermission();
+            if (perm !== "granted") {
+                toast.error(t("settings.push_denied"));
+                return;
+            }
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(serverKey),
+            });
+            await api.post("/push/subscribe", { subscription: sub.toJSON() });
+            setSubscribed(true);
+            toast.success(t("settings.push_enabled"));
+            api.post("/push/test").catch(() => {});
+        } catch {
+            toast.error(t("settings.push_failed"));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const disable = async () => {
+        setBusy(true);
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+                await api.post("/push/unsubscribe", { subscription: sub.toJSON() }).catch(() => {});
+                await sub.unsubscribe();
+            }
+            setSubscribed(false);
+            toast.success(t("settings.push_disabled"));
+        } catch {
+            toast.error(t("settings.push_failed"));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <section className="surface p-6 space-y-3" data-testid="push-section">
+            <h2 className="font-display text-lg font-bold flex items-center gap-2">
+                <BellRing className="h-5 w-5 text-accent" /> {t("settings.push_title")}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t("settings.push_help")}</p>
+            {!supported && <p className="text-sm text-amber-600 dark:text-amber-400">{t("settings.push_unsupported")}</p>}
+            {supported && serverKey === "" && (
+                <p className="text-sm text-amber-600 dark:text-amber-400">{t("settings.push_not_configured")}</p>
+            )}
+            {supported && serverKey && (
+                <Button
+                    variant={subscribed ? "outline" : "default"}
+                    disabled={busy}
+                    onClick={subscribed ? disable : enable}
+                    className="gap-2 rounded-full"
+                    data-testid="push-toggle-btn"
+                >
+                    <Bell className="h-4 w-4" />
+                    {subscribed ? t("settings.push_turn_off") : t("settings.push_turn_on")}
+                </Button>
+            )}
         </section>
     );
 }

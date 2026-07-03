@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Cloud, Mail, Phone, PhoneCall, MessageCircle, Siren, Tag, Users, X } from "lucide-react";
+import { Cloud, Instagram, Linkedin, Mail, Phone, PhoneCall, MessageCircle, Siren, Tag, Users, X } from "lucide-react";
 
 import { Button } from "../components/ui/button";
 import { FeedbackSection } from "../components/FeedbackSection";
@@ -63,7 +63,7 @@ export default function LandingPage() {
                         <span className="w-7 h-7 rounded-lg bg-primary text-primary-foreground grid place-items-center">
                             <Tag className="h-4 w-4" strokeWidth={2.5} />
                         </span>
-                        <span>Info<span className="text-accent">Tag</span></span>
+                        <span>Info-<span className="text-accent">Tag</span></span>
                     </Link>
                     <ul className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
                         <li><a href="#how" className="hover:text-foreground">{t("landing.nav_how")}</a></li>
@@ -128,7 +128,7 @@ export default function LandingPage() {
                             data-testid="hero-qr-tag"
                         >
                             <span className="flex items-center justify-between mb-4">
-                                <span className="font-display font-black text-lg text-slate-900">Info<span className="text-accent">Tag</span></span>
+                                <span className="font-display font-black text-lg text-slate-900">Info-<span className="text-accent">Tag</span></span>
                                 <span className="font-mono text-[10px] tracking-[0.08em] text-slate-500">TAG-IN-0001</span>
                             </span>
                             <span className="relative block bg-white border-2 border-slate-900 rounded-xl p-3 overflow-hidden">
@@ -284,7 +284,7 @@ export default function LandingPage() {
                         <p className="mt-2 opacity-90 max-w-xl mx-auto">{t("landing.band_sub")}</p>
                         <a
                             className="inline-block mt-7 bg-white text-orange-700 font-semibold rounded-full px-7 py-3 hover:-translate-y-0.5 transition-transform"
-                            href="https://wa.me/918904223100?text=Hi%20InfoTag!%20I%20want%20my%20free%20tags."
+                            href="https://wa.me/918904223100?text=Hi%20Info-Tag!%20I%20want%20my%20free%20tags."
                             target="_blank"
                             rel="noopener noreferrer"
                             data-testid="cta-whatsapp"
@@ -306,7 +306,7 @@ export default function LandingPage() {
                                 <span className="w-7 h-7 rounded-lg bg-accent grid place-items-center">
                                     <Tag className="h-4 w-4 text-white" strokeWidth={2.5} />
                                 </span>
-                                Info<span className="text-accent">Tag</span>
+                                Info-<span className="text-accent">Tag</span>
                             </div>
                             <p className="mt-3 text-sm max-w-xs">{t("landing.footer_tagline")}</p>
                         </div>
@@ -339,17 +339,25 @@ export default function LandingPage() {
                                 </li>
                                 <li className="flex items-center gap-1.5" data-testid="footer-contact">
                                     <Mail className="h-3.5 w-3.5 text-accent shrink-0" />
-                                    <a href="mailto:anandlakhera@info-tag.in" className="hover:text-white">anandlakhera@info-tag.in</a>
+                                    <a href="mailto:an.31and@gmail.com" className="hover:text-white">an.31and@gmail.com</a>
                                 </li>
                                 <li className="flex items-center gap-1.5">
                                     <MessageCircle className="h-3.5 w-3.5 text-accent shrink-0" />
                                     <a href="https://wa.me/918904223100" target="_blank" rel="noopener noreferrer" className="hover:text-white">WhatsApp</a>
                                 </li>
+                                <li className="flex items-center gap-1.5" data-testid="footer-linkedin">
+                                    <Linkedin className="h-3.5 w-3.5 text-accent shrink-0" />
+                                    <a href="https://www.linkedin.com/in/anand-lakhera/" target="_blank" rel="noopener noreferrer" className="hover:text-white">linkedin.com/in/anand-lakhera</a>
+                                </li>
+                                <li className="flex items-center gap-1.5" data-testid="footer-instagram">
+                                    <Instagram className="h-3.5 w-3.5 text-accent shrink-0" />
+                                    <a href="https://www.instagram.com/anandlakhera8" target="_blank" rel="noopener noreferrer" className="hover:text-white">@anandlakhera8</a>
+                                </li>
                             </ul>
                         </div>
                     </div>
                     <div className="pt-6 flex flex-wrap justify-between gap-2 font-mono text-[11px] text-white/40">
-                        <span>© 2026 InfoTag · MIT open source</span>
+                        <span>© 2026 Info-Tag · MIT open source</span>
                         <span>MADE IN INDIA 🇮🇳 · PRIVACY-FIRST BY DESIGN</span>
                     </div>
                 </div>

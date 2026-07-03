@@ -11,6 +11,7 @@ from auth import get_current_user, hash_ip
 from db import get_db
 from models import MessageCreatePayload, MessageOut
 from notifications import notify_owner
+from push import push_owner
 
 router = APIRouter(prefix="/api", tags=["messages"])
 
@@ -111,7 +112,12 @@ async def post_finder_message(
         )
         if msg.get("location"):
             link += f"Location: https://maps.google.com/?q={msg['location'].get('lat')},{msg['location'].get('lng')}\n"
-        notify_owner(owner, f"[InfoTag] {payload.action_type.replace('_', ' ')} on your tag", link)
+        notify_owner(owner, f"[Info-Tag] {payload.action_type.replace('_', ' ')} on your tag", link)
+        await push_owner(
+            db, owner["id"],
+            f"Info-Tag · {payload.action_type.replace('_', ' ')} 📨",
+            (msg["body"] or "A finder reached out about your tag.")[:140],
+        )
 
     return {
         "id": msg["id"],

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, MessageSquare } from "lucide-react";
+import { MapPin, MessageSquare, Share2 } from "lucide-react";
 
 import api, { formatApiError } from "../lib/api";
 import { useI18n } from "../lib/i18n";
@@ -43,6 +43,18 @@ export default function InboxPage() {
     );
 }
 
+/* Forward a finder alert to family/friends over WhatsApp. */
+function waShareUrl(m, tag, t) {
+    const lines = [
+        `📨 Info-Tag: ${t(ACTION_KEYS[m.action_type] || "inbox.action_message")}`,
+        `🏷️ ${tag ? tag.display_name || tag.label : "Tag"}`,
+    ];
+    if (m.body) lines.push(`💬 ${m.body}`);
+    if (m.finder_name || m.finder_contact) lines.push(`👤 ${[m.finder_name, m.finder_contact].filter(Boolean).join(" · ")}`);
+    if (m.location) lines.push(`📍 https://maps.google.com/?q=${m.location.lat},${m.location.lng}`);
+    return `https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
 function InboxBody({ msgs, tags, t }) {
     if (msgs === null) {
         return <div className="text-muted-foreground animate-pulse-soft">{t("common.loading")}</div>;
@@ -73,19 +85,33 @@ function InboxBody({ msgs, tags, t }) {
                             {tag ? tag.display_name || tag.label : "Tag"}
                         </div>
                         {m.body && <p className="text-sm mt-2 whitespace-pre-wrap">{m.body}</p>}
+                        {m.location && (
+                            <a
+                                href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400 hover:border-emerald-500"
+                                data-testid={`inbox-gps-${m.id}`}
+                            >
+                                <MapPin className="h-4 w-4 shrink-0" />
+                                <span className="font-medium">{t("inbox.view_location")}</span>
+                                <span className="font-mono text-xs opacity-80">
+                                    {Number(m.location.lat).toFixed(5)}, {Number(m.location.lng).toFixed(5)}
+                                </span>
+                            </a>
+                        )}
                         <div className="text-xs text-muted-foreground mt-3 flex flex-wrap gap-3 items-center">
                             {m.finder_name && <span>{t("inbox.from")}: {m.finder_name}</span>}
                             {m.finder_contact && <span>· {m.finder_contact}</span>}
-                            {m.location && (
-                                <a
-                                    href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-accent hover:underline"
-                                >
-                                    <MapPin className="h-3.5 w-3.5" /> {t("inbox.view_location")}
-                                </a>
-                            )}
+                            <a
+                                href={waShareUrl(m, tag, t)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline"
+                                data-testid={`inbox-share-${m.id}`}
+                            >
+                                <Share2 className="h-3.5 w-3.5" /> {t("inbox.share_whatsapp")}
+                            </a>
                             {tag && (
                                 <Link to={`/tags/${tag.id}`} className="ml-auto text-accent hover:underline">
                                     {t("inbox.open_tag")}

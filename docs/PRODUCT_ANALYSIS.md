@@ -1,8 +1,8 @@
-# InfoTag — Competitive Analysis & Feature Roadmap
+# Info-Tag — Competitive Analysis & Feature Roadmap
 
 *Prepared 2026-07-03 · Owner: Anand Lakhera · Co-Founder: Devesh Sen*
 
-InfoTag's positioning: **free (or as close to ₹0 as possible), privacy-first,
+Info-Tag's positioning: **free (or as close to ₹0 as possible), privacy-first,
 no-app smart tags**. This document compares the Indian QR-tag market and maps
 which competitor features we adopt, improve, or deliberately skip — always
 choosing the zero-cost path first.
@@ -15,11 +15,11 @@ choosing the zero-cost path first.
 | **LostTag / EkTag** (ektag.app) | Anonymous reach-the-owner relay | Paid physical tags | "Tag anything" — vehicles, keys, luggage, pets; Made in India; no app for finders |
 | **Car Sampark Tag / NGF132** (sampark.me) | Masked calls + SMS + WhatsApp notifications, virtual number | ₹2,999 / 20 tags | Focused on vehicle/parking use case |
 | **LetzScan** (letzscan.com) | Vehicle parking QR | ₹132 / tag, ₹399 / 2 | Parking-first positioning |
-| **LostIt Tag** (lostittag.com) | In-app secure chat, reward incentives, community lost-map | $20/year subscription | App-required — the model InfoTag explicitly rejects |
+| **LostIt Tag** (lostittag.com) | In-app secure chat, reward incentives, community lost-map | $20/year subscription | App-required — the model Info-Tag explicitly rejects |
 
-### What every paid competitor charges for — and how InfoTag does it free
+### What every paid competitor charges for — and how Info-Tag does it free
 
-| Competitor feature | Their cost | InfoTag's approach |
+| Competitor feature | Their cost | Info-Tag's approach |
 |---|---|---|
 | Direct-calling tag | Separate ₹99+ product | **Per-tag toggle** — `direct` mode renders free `tel:` / `wa.me` / `sms:` deep links. ₹0, no telephony provider. |
 | Mask-calling tag | Separate ₹99+ product / virtual number plans | **Default `masked` mode** — reverse relay: the finder leaves *their* number, the owner calls back. Owner's number is never disclosed. ₹0. Optional Twilio bridge (env-gated) hides *both* numbers for deployments that want it. |
@@ -31,7 +31,7 @@ choosing the zero-cost path first.
 ## 2. The mask / no-mask contact model (shipped in this iteration)
 
 Competitors force the choice at **purchase time** (you buy a "mask" tag or a
-"direct" tag). InfoTag makes it a **per-tag software toggle** — the same
+"direct" tag). Info-Tag makes it a **per-tag software toggle** — the same
 printed QR can switch modes anytime:
 
 - **Masked (default, privacy-first)** — the finder page never contains the
@@ -56,7 +56,7 @@ user in Settings → Phone & alerts.
 3. Real WhatsApp Cloud API + Twilio SMS + Twilio masked-call bridge
    integrations (all env-gated; zero-config deployments still work).
 4. Free callback-request relay (`POST /api/public/tags/{slug}/call-request`).
-5. Animated landing page: interactive "InfoTag in action" use-case scenes
+5. Animated landing page: interactive "Info-Tag in action" use-case scenes
    (wrong parking, masked call, lost & found, medical ID) built with pure
    CSS keyframes, honoring `prefers-reduced-motion`.
 6. Co-founder credit: Devesh Sen (+91 89042 23100 shown as org contact).

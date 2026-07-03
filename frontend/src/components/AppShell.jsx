@@ -32,7 +32,7 @@ export function AppShell() {
                     >
                         <Tag className="h-5 w-5 text-accent" strokeWidth={2.5} />
                         <span>
-                            Info<span className="text-accent">Tag</span>
+                            Info-<span className="text-accent">Tag</span>
                         </span>
                     </Link>
                     <nav className="hidden md:flex items-center gap-1 text-sm">

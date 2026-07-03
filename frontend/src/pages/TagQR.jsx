@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Copy, Download, Loader2, QrCode } from "lucide-react";
+import { ArrowLeft, Check, Copy, Download, Loader2, MessageCircle, QrCode } from "lucide-react";
 import { toast } from "sonner";
 
 import { API_BASE } from "../lib/api";
@@ -95,7 +95,18 @@ export default function TagQRPage() {
                     >
                         {finderUrl}
                     </a>
-                    <CopyUrlButton url={finderUrl} />
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        <CopyUrlButton url={finderUrl} />
+                        <a
+                            href={`https://wa.me/?text=${encodeURIComponent(`${t("qr.share_text")} ${finderUrl}`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                            data-testid="qr-share-whatsapp"
+                        >
+                            <MessageCircle className="h-3.5 w-3.5" /> {t("qr.share_whatsapp")}
+                        </a>
+                    </div>
                 </div>
 
                 <div className="space-y-4">
@@ -105,26 +116,26 @@ export default function TagQRPage() {
                         <div className="mt-5 space-y-3">
                             <DownloadButton
                                 url={`${qrSrc}?download=1`}
-                                filename={`infotag-${tag.slug}-qr.png`}
+                                filename={`info-tag-${tag.slug}-qr.png`}
                                 label={t("qr.download_png")}
                                 testId="dl-png"
                                 icon={QrCode}
                             />
                             <DownloadButton
                                 url={`${API_BASE}/tags/${tag.id}/pdf?layout=a4_stickers`}
-                                filename={`infotag-${tag.slug}-a4_stickers.pdf`}
+                                filename={`info-tag-${tag.slug}-a4_stickers.pdf`}
                                 label={t("qr.download_a4")}
                                 testId="dl-a4"
                             />
                             <DownloadButton
                                 url={`${API_BASE}/tags/${tag.id}/pdf?layout=id_card`}
-                                filename={`infotag-${tag.slug}-id_card.pdf`}
+                                filename={`info-tag-${tag.slug}-id_card.pdf`}
                                 label={t("qr.download_id")}
                                 testId="dl-id"
                             />
                             <DownloadButton
                                 url={`${API_BASE}/tags/${tag.id}/pdf?layout=keyring`}
-                                filename={`infotag-${tag.slug}-keyring.pdf`}
+                                filename={`info-tag-${tag.slug}-keyring.pdf`}
                                 label={t("qr.download_keyring")}
                                 testId="dl-keyring"
                             />

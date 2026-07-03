@@ -1,6 +1,6 @@
 {
-    "name": "InfoTag — Privacy-first smart tags",
-    "short_name": "InfoTag",
+    "name": "Info-Tag — Privacy-first smart tags",
+    "short_name": "Info-Tag",
     "description": "Free, no-app, privacy-first smart tags for vehicles, pets, luggage, keys and medical IDs. Made in India.",
     "start_url": "/dashboard",
     "scope": "/",

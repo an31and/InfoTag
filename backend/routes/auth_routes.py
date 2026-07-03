@@ -127,7 +127,7 @@ async def me(user: dict = Depends(_current_user_dep)) -> dict:
 
 @router.post("/google/session")
 async def google_session(payload: dict, response: Response) -> dict:
-    """Exchange Emergent Google session_id for a InfoTag JWT cookie session.
+    """Exchange Emergent Google session_id for a Info-Tag JWT cookie session.
 
     REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS,
     THIS BREAKS THE AUTH.  The frontend passes us the session_id from the URL

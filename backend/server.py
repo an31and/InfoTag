@@ -1,4 +1,4 @@
-"""InfoTag — FastAPI entrypoint."""
+"""Info-Tag — FastAPI entrypoint."""
 from __future__ import annotations
 
 from dotenv import load_dotenv
@@ -24,7 +24,9 @@ from notifications import (  # noqa: E402
 )
 from routes.admin_routes import router as admin_router  # noqa: E402
 from routes.auth_routes import router as auth_router  # noqa: E402
+from push import push_enabled  # noqa: E402
 from routes.contact_routes import router as contact_router  # noqa: E402
+from routes.push_routes import router as push_router  # noqa: E402
 from routes.finder_ssr import router as finder_ssr_router  # noqa: E402
 from routes.message_routes import router as message_router  # noqa: E402
 from routes.pdf_routes import router as pdf_router  # noqa: E402
@@ -43,7 +45,7 @@ async def lifespan(app: FastAPI):
     await ensure_indexes(db)
     await seed_admin_and_demo(db)
     logger.info(
-        "InfoTag API ready. Email=%s WhatsApp=%s Twilio=%s",
+        "Info-Tag API ready. Email=%s WhatsApp=%s Twilio=%s",
         email_enabled(), whatsapp_enabled(), twilio_enabled(),
     )
     yield
@@ -51,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="InfoTag",
+    title="Info-Tag",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -77,6 +79,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(contact_router)
+app.include_router(push_router)
 app.include_router(public_router)
 app.include_router(tag_router)
 app.include_router(profile_router)
@@ -88,7 +91,7 @@ app.include_router(finder_ssr_router)
 
 @app.get("/api")
 async def root() -> dict:
-    return {"name": "InfoTag API", "tagline": "Privacy-first, no-app, public-service smart tags.", "made_in": "India", "docs": "/docs"}
+    return {"name": "Info-Tag API", "tagline": "Privacy-first, no-app, public-service smart tags.", "made_in": "India", "docs": "/docs"}
 
 
 @app.get("/api/health")
@@ -111,6 +114,7 @@ async def features() -> dict:
         "sms": sms_enabled(),
         "twilio": twilio_enabled(),
         "masked_calls": masked_call_enabled(),
+        "web_push": push_enabled(),
         "callback_relay": True,  # always free
         "direct_deep_links": True,  # always free
         "made_in_india": True,

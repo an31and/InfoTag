@@ -60,7 +60,7 @@ export default function AuthPage({ mode = "login" }) {
             <div className="flex flex-col">
                 <div className="flex items-center justify-between p-4 border-b md:border-0">
                     <Link to="/" className="md:hidden inline-flex items-center gap-2 font-display font-black text-lg">
-                        <Tag className="h-5 w-5 text-accent" /> Info<span className="text-accent">Tag</span>
+                        <Tag className="h-5 w-5 text-accent" /> Info-<span className="text-accent">Tag</span>
                     </Link>
                     <div className="ml-auto flex items-center gap-1">
                         <LanguageSwitcher compact />

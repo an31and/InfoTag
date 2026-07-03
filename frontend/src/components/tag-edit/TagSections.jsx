@@ -36,7 +36,7 @@ export function TagBasicSection({ tag, set, isNew, t }) {
                     <Select value={tag.type} onValueChange={(v) => set("type", v)}>
                         <SelectTrigger data-testid="tag-type-trigger"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {["vehicle", "pet", "luggage", "keys", "medical", "general"].map((k) => (
+                            {["vehicle", "pet", "luggage", "keys", "medical", "special", "general"].map((k) => (
                                 <SelectItem key={k} value={k}>{t(`dashboard.${k}`)}</SelectItem>
                             ))}
                         </SelectContent>

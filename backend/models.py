@@ -1,4 +1,4 @@
-"""Pydantic models for InfoTag.
+"""Pydantic models for Info-Tag.
 
 We keep MongoDB documents flat and JSON-serialisable.  All ObjectIds are
 avoided in favour of UUID strings stored in the document body so the API
@@ -19,7 +19,7 @@ def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-TagType = Literal["vehicle", "pet", "luggage", "keys", "medical", "general"]
+TagType = Literal["vehicle", "pet", "luggage", "keys", "medical", "special", "general"]
 TagStatus = Literal["active", "lost", "found"]
 ActionType = Literal[
     "message",
@@ -92,6 +92,12 @@ DEFAULT_PUBLIC_FIELDS: dict[str, bool] = {
     "note": True,
     # optional thank-you reward shown to finders
     "reward": True,
+    # special-ability (guardian) tags — for children, elders and people who
+    # may not be able to speak; the guardian phone is public on purpose
+    "guardian_name": True,
+    "guardian_phone": True,
+    "special_notes": True,
+    "home_area": True,
 }
 
 # Per-tag contact preference — the "mask / no-mask" switch.

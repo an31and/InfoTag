@@ -1,4 +1,4 @@
-"""MongoDB connection + index/seed setup for InfoTag."""
+"""MongoDB connection + index/seed setup for Info-Tag."""
 from __future__ import annotations
 
 import os
@@ -54,7 +54,7 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
 
 async def seed_admin_and_demo(db: AsyncIOMotorDatabase) -> None:
     """Create an admin account + demo tags so the app is testable on boot."""
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@tagit.in")
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@info-tag.in")
     admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
     if admin_password == "admin123":
         import logging

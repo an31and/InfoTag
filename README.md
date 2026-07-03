@@ -1,8 +1,8 @@
-# InfoTag — privacy-first, no-app smart tags
+# Info-Tag — privacy-first, no-app smart tags
 
 > Lose less. Help more.  
 
-InfoTag is a self-hostable web app + PWA that lets ordinary people stick a QR
+Info-Tag is a self-hostable web app + PWA that lets ordinary people stick a QR
 sticker on their bike, pet's collar, luggage, keys or wallet — and lets a
 kind person reach the owner if it's ever lost, **without installing an app**.
 
@@ -12,14 +12,14 @@ group, allergies and an emergency contact in seconds.
 ## Why
 
 Most "smart tag" products lock finders into an app, expose owners' phone
-numbers, or charge a subscription. InfoTag does none of those.
+numbers, or charge a subscription. Info-Tag does none of those.
 
 - **No app for finders.** Any phone camera. Open web page. Done.
 - **PWA for owners.** Installable on Android/iOS via the web manifest.
 - **Privacy-first.** Owner's phone number is never exposed; messages route
   via server-side relays. IPs are hashed.
 - **Masked or direct contact — per tag.** Competitors sell separate "mask
-  calling" and "direct calling" products; InfoTag makes it a free toggle.
+  calling" and "direct calling" products; Info-Tag makes it a free toggle.
   *Masked* (default): finders message you or request a call back — your
   number never appears; an optional Twilio bridge hides both numbers.
   *Direct*: finders get one-tap Call / WhatsApp / SMS buttons (free deep
@@ -144,6 +144,7 @@ SMS alerts each switch on when their env vars appear:
 | Channel | Env vars | Cost |
 |---|---|---|
 | Email | `SENDGRID_API_KEY` *or* `SMTP_HOST`+`SMTP_USER`(+`SMTP_PASS`,`SMTP_PORT`,`EMAIL_FROM`) | free |
+| Web Push | `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` (+`VAPID_SUBJECT`) | free forever |
 | WhatsApp | `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID` (Meta Cloud API) | free service tier |
 | SMS + masked calls | `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_FROM_NUMBER` | paid, env-gated |
 
@@ -173,6 +174,7 @@ MIT — see [`LICENSE`](./LICENSE).
 ## Team
 
 **Founder — Anand Lakhera** — an.31and@gmail.com · +91 89042 23100  
+LinkedIn: [linkedin.com/in/anand-lakhera](https://www.linkedin.com/in/anand-lakhera/) · Instagram: [@anandlakhera8](https://www.instagram.com/anandlakhera8)  
 **Co-Founder — Devesh Sen**
 
 Want to sponsor a batch of free physical stickers? Use the form on the

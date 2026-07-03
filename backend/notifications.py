@@ -26,7 +26,7 @@ def send_email(to_email: str, subject: str, body: str) -> bool:
     """Best-effort email sender.  Returns True if the email was dispatched."""
     if not to_email:
         return False
-    from_email = os.environ.get("EMAIL_FROM") or "no-reply@tagit.in"
+    from_email = os.environ.get("EMAIL_FROM") or "no-reply@info-tag.in"
 
     sendgrid_key = os.environ.get("SENDGRID_API_KEY")
     if sendgrid_key:
@@ -183,7 +183,7 @@ def start_masked_call(finder_phone: str, owner_phone: str) -> bool:
     token = os.environ["TWILIO_AUTH_TOKEN"]
     from_number = os.environ["TWILIO_FROM_NUMBER"]
     twiml = (
-        "<Response><Say>Connecting you to the InfoTag owner. "
+        "<Response><Say>Connecting you to the Info-Tag owner. "
         "Both numbers stay private.</Say>"
         f'<Dial callerId="{from_number}">{owner_phone}</Dial></Response>'
     )

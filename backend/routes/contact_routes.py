@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 from auth import hash_ip
 from db import get_db
 from notifications import masked_call_enabled, notify_owner, start_masked_call
+from push import push_owner
 
 router = APIRouter(prefix="/api/public/tags", tags=["contact"])
 
@@ -100,7 +101,7 @@ async def request_callback(slug: str, payload: CallRequestPayload, request: Requ
     if owner and owner.get("notify_on_message", True):
         notify_owner(
             owner,
-            "[InfoTag] Call-back request on your tag",
+            "[Info-Tag] Call-back request on your tag",
             (
                 f"Tag: {doc.get('display_name') or doc.get('label')}\n"
                 f"Finder: {name or 'anonymous'}\n"
@@ -108,6 +109,7 @@ async def request_callback(slug: str, payload: CallRequestPayload, request: Requ
                 "They are waiting near your item — please call them back.\n"
             ),
         )
+        await push_owner(db, owner["id"], "Info-Tag · call-back request 📞", f"A finder left their number: {phone}. Call them back!")
     return {"ok": True, "id": msg["id"]}
 
 

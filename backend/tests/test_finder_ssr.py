@@ -48,7 +48,7 @@ class TestSSRVehicle:
         assert "text/html" in ct, f"content-type={ct}"
         html = r.text
         # brand
-        assert "InfoTag" in html or "Info<span" in html
+        assert "Info-Tag" in html or "Info-<span" in html
         assert 'data-testid="finder-brand"' in html
         # quick action buttons
         assert 'data-testid="finder-action-wrong_parking"' in html

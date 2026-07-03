@@ -32,6 +32,7 @@ const TYPE_FIELDS = {
     luggage: ["note", "reward"],
     keys: ["note", "reward"],
     medical: [],
+    special: ["guardian_name", "guardian_phone", "special_notes", "home_area"],
     general: ["note", "reward"],
 };
 
@@ -51,6 +52,10 @@ const EMPTY_TAG = {
         pet_breed: true,
         note: true,
         reward: true,
+        guardian_name: true,
+        guardian_phone: true,
+        special_notes: true,
+        home_area: true,
     },
     contact: {
         mode: "masked",

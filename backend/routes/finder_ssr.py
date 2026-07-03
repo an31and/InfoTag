@@ -27,6 +27,7 @@ from fastapi.responses import HTMLResponse
 from auth import hash_ip
 from db import get_db
 from notifications import notify_owner
+from push import push_owner
 
 router = APIRouter(prefix="/api/finder", tags=["finder-ssr"])
 
@@ -53,8 +54,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "unclaimed_title": "This tag isn't claimed yet",
         "unclaimed_body": "If this tag belongs to you, sign in to claim it.",
         "tag_not_found": "We couldn't find this tag.",
-        "tag_not_found_help": "The QR may have been misprinted, or this code isn't a InfoTag.",
-        "powered_by": "Powered by InfoTag — privacy-first, no app needed.",
+        "tag_not_found_help": "The QR may have been misprinted, or this code isn't an Info-Tag.",
+        "powered_by": "Powered by Info-Tag — privacy-first, no app needed.",
         "made_in_india": "Made in India",
         "lang_switch": "हिन्दी",
         "back": "← Back",
@@ -76,8 +77,15 @@ STRINGS: dict[str, dict[str, str]] = {
         "your_phone": "Your phone number",
         "callback_send": "Alert the owner",
         "privacy_note": "Privacy-protected: the owner's phone number is never shown.",
-        "wa_prefill": "Hi! I scanned your InfoTag",
+        "wa_prefill": "Hi! I scanned your Info-Tag",
         "reward_offered": "Reward for returning this",
+        "sp_heading": "PLEASE HELP ME",
+        "sp_body": "I may not be able to speak or answer questions. Please be patient and kind with me.",
+        "sp_guardian": "My guardian",
+        "sp_call_guardian": "Call my guardian",
+        "sp_notes": "Things to know about me",
+        "sp_home": "I live near",
+        "sp_thanks": "Thank you for stopping to help. It means everything.",
     },
     "hi": {
         "header": "नमस्ते, किसी ने यह टैग स्कैन किया है।",
@@ -98,7 +106,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "unclaimed_body": "अगर यह आपका है, तो साइन इन करके इसे क्लेम करें।",
         "tag_not_found": "यह टैग नहीं मिला।",
         "tag_not_found_help": "QR ग़लत प्रिंट हुआ हो सकता है।",
-        "powered_by": "InfoTag — गोपनीयता-प्रथम, कोई ऐप नहीं।",
+        "powered_by": "Info-Tag — गोपनीयता-प्रथम, कोई ऐप नहीं।",
         "made_in_india": "मेड इन इंडिया",
         "lang_switch": "English",
         "back": "← वापस",
@@ -120,8 +128,15 @@ STRINGS: dict[str, dict[str, str]] = {
         "your_phone": "आपका फ़ोन नंबर",
         "callback_send": "मालिक को सूचित करें",
         "privacy_note": "गोपनीयता-सुरक्षित: मालिक का फ़ोन नंबर कभी नहीं दिखाया जाता।",
-        "wa_prefill": "नमस्ते! मैंने आपका InfoTag स्कैन किया",
+        "wa_prefill": "नमस्ते! मैंने आपका Info-Tag स्कैन किया",
         "reward_offered": "लौटाने पर इनाम",
+        "sp_heading": "कृपया मेरी मदद करें",
+        "sp_body": "हो सकता है मैं बोल न पाऊँ या सवालों के जवाब न दे पाऊँ। कृपया मेरे साथ धैर्य और दया से पेश आएँ।",
+        "sp_guardian": "मेरे अभिभावक",
+        "sp_call_guardian": "मेरे अभिभावक को कॉल करें",
+        "sp_notes": "मेरे बारे में ज़रूरी बातें",
+        "sp_home": "मैं यहाँ के पास रहता/रहती हूँ",
+        "sp_thanks": "रुककर मदद करने के लिए धन्यवाद। यह बहुत मायने रखता है।",
     },
 }
 
@@ -178,6 +193,13 @@ body.em{background:#fef2f2}
 .em-call{display:flex;align-items:center;justify-content:center;gap:10px;background:#dc2626;color:#fff;border:none;font-size:18px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;padding:18px;border-radius:18px;text-decoration:none;position:sticky;bottom:12px;box-shadow:0 8px 24px rgba(220,38,38,.25);margin-top:16px}
 .em-call:active{background:#b91c1c}
 
+/* Special-ability (guardian) card */
+.sp-pill{display:inline-flex;align-items:center;gap:6px;background:#0369a1;color:#fff;font-weight:900;font-size:11px;letter-spacing:.15em;text-transform:uppercase;padding:6px 12px;border-radius:9999px}
+.sp-card{border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;padding:20px;margin:16px 0}
+.sp-call{display:flex;align-items:center;justify-content:center;gap:10px;background:#0369a1;color:#fff;border:none;font-size:17px;font-weight:900;letter-spacing:.03em;padding:16px;border-radius:18px;text-decoration:none;margin-top:14px;box-shadow:0 8px 24px rgba(3,105,161,.25)}
+.sp-call:active{background:#075985}
+@media (prefers-color-scheme: dark){.sp-card{background:#082f49;border-color:#075985;color:#e0f2fe}}
+
 /* Contact-the-owner buttons */
 .btn-contact{display:flex;align-items:center;gap:10px;justify-content:center;width:100%;padding:14px 18px;border-radius:18px;text-decoration:none;font-weight:700;font-size:15px;margin:0 0 8px;border:none;cursor:pointer;font-family:inherit}
 .btn-call{background:#16a34a;color:#fff}
@@ -209,7 +231,7 @@ body.em{background:#fef2f2}
 """
 
 
-def render_layout(*, lang: str, body: str, emergency: bool = False, title: str = "InfoTag") -> str:
+def render_layout(*, lang: str, body: str, emergency: bool = False, title: str = "Info-Tag") -> str:
     other_lang = "hi" if lang == "en" else "en"
     body_class = "em" if emergency else ""
     return f"""<!doctype html>
@@ -220,15 +242,15 @@ def render_layout(*, lang: str, body: str, emergency: bool = False, title: str =
 <meta name="theme-color" content="{'#dc2626' if emergency else '#0F172A'}">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
-<title>{esc(title)} — InfoTag</title>
-<meta name="description" content="A kind person scanned this InfoTag. Help reunite an item with its owner.">
+<title>{esc(title)} — Info-Tag</title>
+<meta name="description" content="A kind person scanned this Info-Tag. Help reunite an item with its owner.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F172A'/%3E%3Cpath d='M21 11l-4-4-9 9v4h4l9-9z' stroke='%23E25822' stroke-width='2.4' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>{CSS}</style>
 <script>document.documentElement.className='js'</script>
 </head>
 <body class="{body_class}">
 <header><div class="wrap row">
-<a class="brand" href="/" data-testid="finder-brand"><span aria-hidden="true" class="icon-tag">⛓︎</span>Info<span class="it">Tag</span></a>
+<a class="brand" href="/" data-testid="finder-brand"><span aria-hidden="true" class="icon-tag">⛓︎</span>Info-<span class="it">Tag</span></a>
 <a class="lang" href="?lang={other_lang}" data-testid="finder-lang-switch">{esc(STRINGS[lang]['lang_switch'])}</a>
 </div></header>
 <main class="wrap">{body}</main>
@@ -281,6 +303,7 @@ QUICK_ACTIONS = {
     "keys": ["found"],
     "general": ["found"],
     "medical": [],
+    "special": ["found"],
 }
 
 ACTION_LABEL_KEY = {
@@ -358,6 +381,44 @@ def _contact_section(lang: str, slug: str, contact: Optional[dict], display_name
 </div>"""
 
 
+def _special_section(lang: str, doc: dict) -> str:
+    """Guardian card for special-ability tags — children, elders, and people
+    who may not be able to speak.  Big, calm, one-tap call button."""
+    if doc.get("type") != "special":
+        return ""
+    public_fields = doc.get("public_fields", {})
+    data = doc.get("data", {}) or {}
+
+    def pub(key: str) -> str:
+        return str(data.get(key, "") or "") if public_fields.get(key, True) else ""
+
+    guardian_name = pub("guardian_name")
+    guardian_phone = re.sub(r"[^+\d]", "", pub("guardian_phone"))
+    notes = pub("special_notes")
+    home = pub("home_area")
+
+    rows = ""
+    if notes:
+        rows += f'<div style="margin-top:12px"><div class="kicker">{esc(t(lang,"sp_notes"))}</div><div style="font-weight:600;font-size:16px;white-space:pre-wrap">{esc(notes)}</div></div>'
+    if home:
+        rows += f'<div style="margin-top:12px"><div class="kicker">{esc(t(lang,"sp_home"))}</div><div style="font-weight:600;font-size:16px">{esc(home)}</div></div>'
+    if guardian_name:
+        rows += f'<div style="margin-top:12px"><div class="kicker">{esc(t(lang,"sp_guardian"))}</div><div style="font-weight:600;font-size:16px">{esc(guardian_name)}</div></div>'
+    call_btn = (
+        f'<a class="sp-call" href="tel:{esc(guardian_phone)}" data-testid="special-call-guardian">📞 {esc(t(lang,"sp_call_guardian"))}</a>'
+        if guardian_phone
+        else ""
+    )
+    return f"""
+<div class="sp-card" data-testid="finder-special">
+<span class="sp-pill">🤝 {esc(t(lang,'sp_heading'))}</span>
+<p style="margin:12px 0 0;font-size:16px;font-weight:600">{esc(t(lang,'sp_body'))}</p>
+{rows}
+{call_btn}
+<p class="muted" style="margin:12px 0 0">{esc(t(lang,'sp_thanks'))}</p>
+</div>"""
+
+
 def render_claimed(lang: str, doc: dict, contact: Optional[dict] = None) -> str:
     actions = QUICK_ACTIONS.get(doc.get("type", "general"), [])
     public_fields = doc.get("public_fields", {})
@@ -399,12 +460,13 @@ def render_claimed(lang: str, doc: dict, contact: Optional[dict] = None) -> str:
     body = f"""
 <div class="card" data-testid="finder-claimed">
 <div class="kicker">{esc(doc.get('type','item').upper())}</div>
-<h1 data-testid="finder-display-name">{esc(display_name) or 'InfoTag'}</h1>
+<h1 data-testid="finder-display-name">{esc(display_name) or 'Info-Tag'}</h1>
 <div class="muted" style="margin-top:4px">{esc(t(lang,'header'))}</div>
 {lost_banner}
 {reward_banner}
 {note_html}
 </div>
+{_special_section(lang, doc)}
 {_contact_section(lang, doc["slug"], contact, display_name)}
 {actions_html}
 <div class="card">
@@ -427,7 +489,7 @@ navigator.geolocation.getCurrentPosition(function(p){{
 var v=p.coords.latitude+','+p.coords.longitude;
 document.querySelectorAll('[data-loc-target]').forEach(function(el){{el.value=v}});
 }},function(){{}},{{timeout:5000,enableHighAccuracy:false}});}})();</script>"""
-    return render_layout(lang=lang, body=body, title=display_name or "InfoTag")
+    return render_layout(lang=lang, body=body, title=display_name or "Info-Tag")
 
 
 def render_emergency(lang: str, doc: dict, em: dict) -> str:
@@ -539,6 +601,12 @@ async def finder_page(slug: str, request: Request) -> HTMLResponse:
                 "user_agent": (request.headers.get("user-agent") or "")[:200],
             }
         )
+        # Free Web Push scan alert (opt-in via notify_on_scan)
+        if doc.get("owner_id"):
+            owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+            if owner and owner.get("notify_on_scan"):
+                name = doc.get("display_name") or doc.get("label") or "your tag"
+                await push_owner(db, owner["id"], "Info-Tag · tag scanned 👀", f"Someone just scanned “{name}”.", "/dashboard")
 
     if doc.get("owner_id") is None:
         return HTMLResponse(render_unclaimed(lang, slug))
@@ -628,6 +696,11 @@ async def finder_action(
         )
         if loc:
             text += f"Location: https://maps.google.com/?q={loc['lat']},{loc['lng']}\n"
-        notify_owner(owner, f"[InfoTag] {action_type.replace('_', ' ')} on your tag", text)
+        notify_owner(owner, f"[Info-Tag] {action_type.replace('_', ' ')} on your tag", text)
+        await push_owner(
+            db, owner["id"],
+            f"Info-Tag · {action_type.replace('_', ' ')} 📨",
+            (msg["body"] or "A finder reached out about your tag.")[:140],
+        )
 
     return HTMLResponse(render_thanks(lang, slug))

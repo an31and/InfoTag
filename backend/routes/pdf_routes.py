@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import io
-import os
 from typing import Literal
 
 import qrcode
@@ -15,6 +14,7 @@ from reportlab.pdfgen import canvas
 
 from auth import get_current_user
 from db import get_db
+from urls import resolve_site_url, site_domain
 
 router = APIRouter(prefix="/api/tags/{tag_id}/pdf", tags=["pdf"])
 
@@ -23,10 +23,6 @@ Layout = Literal["a4_stickers", "id_card", "keyring"]
 
 async def _current_user_dep(request: Request) -> dict:
     return await get_current_user(request, get_db())
-
-
-def _site_url() -> str:
-    return os.environ.get("SITE_URL", "").rstrip("/")
 
 
 def _qr_image(url: str) -> qrcode.image.pil.PilImage:
@@ -53,6 +49,7 @@ CONTEXT_CAPTIONS = {
     "luggage": "Scan if found — return to owner",
     "keys": "Scan if found — return to owner",
     "medical": "MEDICAL ID — scan in emergency",
+    "special": "PLEASE HELP — scan to reach my guardian",
     "general": "Scan if found",
 }
 
@@ -60,6 +57,7 @@ CONTEXT_CAPTIONS = {
 @router.get("")
 async def generate_pdf(
     tag_id: str,
+    request: Request,
     layout: Layout = Query("a4_stickers"),
     user: dict = Depends(_current_user_dep),
 ) -> StreamingResponse:
@@ -68,22 +66,25 @@ async def generate_pdf(
     if not doc:
         raise HTTPException(status_code=404, detail="Tag not found")
 
-    url = f"{_site_url()}/api/finder/{doc['slug']}"
+    # Absolute URL derived from SITE_URL or the request origin — a QR with a
+    # relative path cannot be opened by phone cameras.
+    url = f"{resolve_site_url(request)}/api/finder/{doc['slug']}"
+    domain = site_domain(request)
     pil = _qr_image(url)
     caption = CONTEXT_CAPTIONS.get(doc.get("type", "general"), "Scan if found")
-    label = doc.get("display_name") or doc.get("label") or "InfoTag"
+    label = doc.get("display_name") or doc.get("label") or "Info-Tag"
 
     buf = io.BytesIO()
     if layout == "a4_stickers":
-        _draw_a4_stickers(buf, pil, doc["slug"], label, caption, doc.get("type", "general"))
+        _draw_a4_stickers(buf, pil, doc["slug"], label, caption, doc.get("type", "general"), domain)
     elif layout == "id_card":
-        _draw_id_card(buf, pil, doc["slug"], label, caption, doc.get("type", "general"))
+        _draw_id_card(buf, pil, doc["slug"], label, caption, doc.get("type", "general"), domain)
     elif layout == "keyring":
-        _draw_keyring(buf, pil, doc["slug"], label, caption, doc.get("type", "general"))
+        _draw_keyring(buf, pil, doc["slug"], label, caption, doc.get("type", "general"), domain)
     else:
         raise HTTPException(status_code=400, detail="Unknown layout")
     buf.seek(0)
-    filename = f"infotag-{doc['slug']}-{layout}.pdf"
+    filename = f"info-tag-{doc['slug']}-{layout}.pdf"
     return StreamingResponse(
         buf,
         media_type="application/pdf",
@@ -99,7 +100,7 @@ ACCENT = HexColor("#E25822")
 EMERGENCY_RED = HexColor("#DC2626")
 
 
-def _draw_a4_stickers(buf, pil, slug, label, caption, tag_type) -> None:
+def _draw_a4_stickers(buf, pil, slug, label, caption, tag_type, domain) -> None:
     c = canvas.Canvas(buf, pagesize=A4)
     page_w, page_h = A4
     cols, rows = 3, 4
@@ -127,13 +128,13 @@ def _draw_a4_stickers(buf, pil, slug, label, caption, tag_type) -> None:
             # Header
             c.setFillColor(EMERGENCY_RED if tag_type == "medical" else ASHOKA_NAVY)
             c.setFont("Helvetica-Bold", 9)
-            c.drawCentredString(x + cell_w / 2, y + cell_h - 8 * mm, "InfoTag · tagit.in")
+            c.drawCentredString(x + cell_w / 2, y + cell_h - 8 * mm, f"Info-Tag · {domain}")
             # Caption
             c.setFillColor(black)
             c.setFont("Helvetica-Bold", 8)
             c.drawCentredString(x + cell_w / 2, y + 10 * mm, caption.upper()[:38])
             c.setFont("Helvetica", 6.5)
-            c.drawCentredString(x + cell_w / 2, y + 6.5 * mm, f"or visit tagit.in/api/finder/{slug}")
+            c.drawCentredString(x + cell_w / 2, y + 6.5 * mm, f"or visit {domain}/api/finder/{slug}")
             c.setFont("Helvetica-Oblique", 6)
             c.setFillColor(HexColor("#666666"))
             c.drawCentredString(x + cell_w / 2, y + 3.5 * mm, "Privacy-first • Made in India")
@@ -141,7 +142,7 @@ def _draw_a4_stickers(buf, pil, slug, label, caption, tag_type) -> None:
     c.save()
 
 
-def _draw_id_card(buf, pil, slug, label, caption, tag_type) -> None:
+def _draw_id_card(buf, pil, slug, label, caption, tag_type, domain) -> None:
     """Credit-card-sized layout (85.6 x 54 mm) centred on an A4 page."""
     c = canvas.Canvas(buf, pagesize=A4)
     page_w, page_h = A4
@@ -164,7 +165,7 @@ def _draw_id_card(buf, pil, slug, label, caption, tag_type) -> None:
     c.saveState()
     c.translate(x + band_w / 2, y + card_h / 2)
     c.rotate(90)
-    c.drawCentredString(0, -3, "InfoTag · MADE IN INDIA")
+    c.drawCentredString(0, -3, "Info-Tag · MADE IN INDIA")
     c.restoreState()
 
     # QR
@@ -183,7 +184,7 @@ def _draw_id_card(buf, pil, slug, label, caption, tag_type) -> None:
     c.drawString(text_x, y + card_h - 16 * mm, caption[:32])
     c.setFont("Helvetica", 6.5)
     c.drawString(text_x, y + 14 * mm, "Scan the QR with any phone camera.")
-    c.drawString(text_x, y + 10 * mm, f"or visit tagit.in/api/finder/{slug}")
+    c.drawString(text_x, y + 10 * mm, f"or visit {domain}/api/finder/{slug}")
     c.setFillColor(HexColor("#666666"))
     c.setFont("Helvetica-Oblique", 6)
     c.drawString(text_x, y + 6 * mm, "No app needed for the finder.")
@@ -192,7 +193,7 @@ def _draw_id_card(buf, pil, slug, label, caption, tag_type) -> None:
     c.save()
 
 
-def _draw_keyring(buf, pil, slug, label, caption, tag_type) -> None:
+def _draw_keyring(buf, pil, slug, label, caption, tag_type, domain) -> None:
     """Small ~35mm round-ish keyring layout, 6 per A4."""
     c = canvas.Canvas(buf, pagesize=A4)
     page_w, page_h = A4
@@ -212,6 +213,6 @@ def _draw_keyring(buf, pil, slug, label, caption, tag_type) -> None:
             _draw_qr(c, pil, x + (size - qr_size) / 2, y + (size - qr_size) / 2 + 2 * mm, qr_size)
             c.setFillColor(EMERGENCY_RED if tag_type == "medical" else ASHOKA_NAVY)
             c.setFont("Helvetica-Bold", 6)
-            c.drawCentredString(x + size / 2, y + 3.5 * mm, "InfoTag · tagit.in")
+            c.drawCentredString(x + size / 2, y + 3.5 * mm, f"Info-Tag · {domain}")
     c.showPage()
     c.save()

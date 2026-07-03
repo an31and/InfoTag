@@ -7,7 +7,7 @@ function LegalLayout({ title, children }) {
             <header className="border-b">
                 <div className="mx-auto max-w-3xl px-4 sm:px-8 h-14 flex items-center justify-between">
                     <Link to="/" className="font-display font-black inline-flex items-center gap-2" data-testid="legal-brand">
-                        <Tag className="h-4 w-4 text-accent" /> Info<span className="text-accent">Tag</span>
+                        <Tag className="h-4 w-4 text-accent" /> Info-<span className="text-accent">Tag</span>
                     </Link>
                     <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
                         <ArrowLeft className="h-4 w-4" /> Home
@@ -26,7 +26,7 @@ export function PrivacyPage() {
     return (
         <LegalLayout title="Privacy policy">
             <p>
-                InfoTag is a privacy-first, free public-service smart-tag ecosystem from India. We collect the
+                Info-Tag is a privacy-first, free public-service smart-tag ecosystem from India. We collect the
                 minimum data needed to help reunite items with owners and to surface medical emergency
                 information when explicitly consented to.
             </p>
@@ -55,9 +55,9 @@ export function TermsPage() {
     return (
         <LegalLayout title="Terms of service">
             <p>
-                InfoTag is provided free of cost as a public service. It is offered "as is" with no warranty of any
+                Info-Tag is provided free of cost as a public service. It is offered "as is" with no warranty of any
                 kind. We do our best to keep the service available and secure, but we are not liable for losses
-                arising from the use, misuse or unavailability of InfoTag.
+                arising from the use, misuse or unavailability of Info-Tag.
             </p>
             <ul>
                 <li>You must own the items you tag.</li>
@@ -76,12 +76,12 @@ export function MedicalDisclaimerPage() {
                 Wrong medical information is dangerous. Please double-check every field before saving.
             </p>
             <p>
-                The Medical Emergency Mode on InfoTag shows the information you, the owner, have entered and given
+                The Medical Emergency Mode on Info-Tag shows the information you, the owner, have entered and given
                 consent to display. It is intended as a convenience for first responders and bystanders — it is
                 not a verified medical record. Always verify identity and seek qualified care.
             </p>
             <p>
-                InfoTag does not provide medical advice, diagnosis or treatment. We are not responsible for actions
+                Info-Tag does not provide medical advice, diagnosis or treatment. We are not responsible for actions
                 taken based on the information displayed.
             </p>
         </LegalLayout>

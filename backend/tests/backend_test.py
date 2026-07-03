@@ -42,7 +42,7 @@ class TestHealth:
     def test_root(self):
         r = requests.get(f"{BASE_URL}/api")
         assert r.status_code == 200
-        assert r.json().get("name") == "InfoTag API"
+        assert r.json().get("name") == "Info-Tag API"
 
     def test_health(self):
         r = requests.get(f"{BASE_URL}/api/health")
@@ -396,8 +396,8 @@ class TestPWA:
         r = requests.get(f"{BASE_URL}/manifest.json")
         assert r.status_code == 200, r.text
         data = r.json()
-        assert data.get("name", "").startswith("InfoTag")
-        assert data.get("short_name") == "InfoTag"
+        assert data.get("name", "").startswith("Info-Tag")
+        assert data.get("short_name") == "Info-Tag"
         assert data.get("theme_color", "").lower() == "#0f172a"
 
     def test_service_worker(self):

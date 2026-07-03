@@ -74,7 +74,7 @@ export function FeedbackSection() {
                     <div className="mt-6 space-y-4">
                         {items.length === 0 ? (
                             <p className="text-sm text-muted-foreground surface p-5">
-                                Be the first to share your InfoTag story →
+                                Be the first to share your Info-Tag story →
                             </p>
                         ) : (
                             items.slice(0, 6).map((f) => (

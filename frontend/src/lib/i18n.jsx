@@ -50,8 +50,8 @@ const dict = {
             unclaimed_title: "This tag isn't claimed yet",
             unclaimed_body: "If this tag belongs to you, sign in to claim it.",
             tag_not_found: "We couldn't find this tag.",
-            tag_not_found_help: "The QR may have been misprinted, or this code isn't a InfoTag.",
-            powered_by: "Powered by InfoTag — privacy-first, no app needed.",
+            tag_not_found_help: "The QR may have been misprinted, or this code isn't a Info-Tag.",
+            powered_by: "Powered by Info-Tag — privacy-first, no app needed.",
         },
         emergency: {
             heading: "MEDICAL EMERGENCY ID",
@@ -76,14 +76,14 @@ const dict = {
             hero_title: "One scan, and they reach you.",
             hero_title_hl: "Your number stays secret.",
             hero_subtitle:
-                "Put a small InfoTag sticker on your bike, keys, bag or pet. If it ever gets lost, any kind person can point their phone camera at it and tell you — right away. No app to install. Nothing to pay. Nobody ever sees your phone number.",
+                "Put a small Info-Tag sticker on your bike, keys, bag or pet. If it ever gets lost, any kind person can point their phone camera at it and tell you — right away. No app to install. Nothing to pay. Nobody ever sees your phone number.",
             cta_primary: "Get your free tags",
             cta_demo: "Try a live scan demo",
             hero_note: "NO APP NEEDED · ANY PHONE CAMERA WORKS · 100% FREE",
             tag_scan_to_reach: "Scan to reach owner",
             tag_tap_demo: "● TAP TO DEMO",
             // Scan demo modal
-            demo_title: "InfoTag · Finder view",
+            demo_title: "Info-Tag · Finder view",
             demo_scanned: "Tag scanned · DEMO-TAG",
             demo_headline: "This bike belongs to someone nearby",
             demo_sub:
@@ -103,7 +103,7 @@ const dict = {
             // How it works
             how_it_works: "How it works",
             how_title: "Stick it. Forget it. Stay reachable.",
-            how_lead: "Three easy steps. If you can stick a sticker, you can use InfoTag.",
+            how_lead: "Three easy steps. If you can stick a sticker, you can use Info-Tag.",
             how_step_1: "Stick your tag",
             how_step_1_desc:
                 "Make a tag on this website and print the sticker for free. Stick it on your thing. It takes two minutes.",
@@ -118,7 +118,7 @@ const dict = {
             uses_title: "One tag,",
             uses_title_hl: "everywhere life happens",
             uses_lead:
-                "From a scooter blocking a gate to a lost school bag — InfoTag connects the finder to you in seconds.",
+                "From a scooter blocking a gate to a lost school bag — Info-Tag connects the finder to you in seconds.",
             uc_vehicle: "Car & bike",
             uc_vehicle_d: "Wrong parking? Lights left on? People can tell you — without your number painted on the windshield.",
             uc_keys: "Keys",
@@ -138,11 +138,11 @@ const dict = {
             // Features
             feat_kicker: "What you get",
             feat_title: "Everything smart tags do — for free",
-            feat_lead: "Other companies sell these features one by one. InfoTag gives you all of them for ₹0.",
+            feat_lead: "Other companies sell these features one by one. Info-Tag gives you all of them for ₹0.",
             badge_core: "Core",
             badge_new: "New",
             f1: "Hidden number (masked)",
-            f1_d: "Finders reach you through InfoTag. Your real number is never shown and never saved on their phone.",
+            f1_d: "Finders reach you through Info-Tag. Your real number is never shown and never saved on their phone.",
             f2: "No app, either side",
             f2_d: "The finder uses their camera. You get alerts on email, WhatsApp or SMS. Nobody installs anything.",
             f3: "WhatsApp & SMS alerts",
@@ -162,7 +162,7 @@ const dict = {
             // Get tags (all free)
             tags_kicker: "Get tags",
             tags_title: "Pick your",
-            tags_title_hl: "InfoTag",
+            tags_title_hl: "Info-Tag",
             tags_lead: "Everything is free. Print at home on any printer, or ask for a sponsored printed tag.",
             price_free: "₹0",
             price_free_note: "free forever",
@@ -207,7 +207,7 @@ const dict = {
             // CTA band
             band_title: "Be first in line",
             band_sub:
-                "InfoTag is free for every Indian household. Make your first tag now, or talk to the founders directly.",
+                "Info-Tag is free for every Indian household. Make your first tag now, or talk to the founders directly.",
             band_btn: "WhatsApp us → +91 89042 23100",
             // Footer
             footer_tagline:
@@ -218,7 +218,7 @@ const dict = {
         auth: {
             sign_in_title: "Welcome back",
             sign_in_subtitle: "Sign in to manage your tags and emergency profile.",
-            sign_up_title: "Create your InfoTag account",
+            sign_up_title: "Create your Info-Tag account",
             sign_up_subtitle: "It's free. No card. No app. No spam.",
             email: "Email",
             password: "Password",
@@ -244,6 +244,7 @@ const dict = {
             luggage: "Luggage",
             keys: "Keys",
             medical: "Medical",
+            special: "Special Ability",
             general: "General",
             status_active: "Active",
             status_lost: "Reported lost",
@@ -264,6 +265,7 @@ const dict = {
             action_headlight_on: "Headlight left on",
             action_found: "Found",
             action_call_request: "Call request",
+            share_whatsapp: "Share on WhatsApp",
         },
         tag_edit: {
             title: "Edit tag",
@@ -281,6 +283,10 @@ const dict = {
             pet_breed: "Breed",
             note: "Note",
             reward: "Reward for the finder (optional — e.g. ₹500 or 'A big thank you!')",
+            guardian_name: "Guardian's name",
+            guardian_phone: "Guardian's phone (shown to helpers — that's the point)",
+            special_notes: "Things a helper should know (e.g. 'I cannot speak. Please be patient.')",
+            home_area: "Home area / landmark (e.g. 'Near City Mall, Indore')",
             save: "Save changes",
             create: "Create tag",
             delete_tag: "Delete tag",
@@ -290,7 +296,7 @@ const dict = {
             section_contact: "How can finders reach you?",
             contact_mode_masked: "Masked (recommended)",
             contact_mode_masked_desc:
-                "Your number stays hidden. Finders message you or request a call back through InfoTag.",
+                "Your number stays hidden. Finders message you or request a call back through Info-Tag.",
             contact_mode_direct: "Direct",
             contact_mode_direct_desc:
                 "Finders see one-tap Call / WhatsApp / SMS buttons with your number. Fastest, zero cost — but your number is visible.",
@@ -313,6 +319,8 @@ const dict = {
             copy_url: "Copy link",
             copied: "Link copied",
             copy_failed: "Couldn't copy the link.",
+            share_whatsapp: "Share on WhatsApp",
+            share_text: "This is my Info-Tag finder page — if you ever find my thing, open this:",
             tip:
                 "Tip: Print at 100% scale. The QR uses high error correction so it can survive a few scratches.",
         },
@@ -353,6 +361,17 @@ const dict = {
             sms_alerts: "SMS me finder alerts",
             alerts_note:
                 "WhatsApp and SMS alerts also require the server to have a provider configured — email alerts always work.",
+            push_title: "Phone notifications (free)",
+            push_help:
+                "Get an instant pop-up on this device when your tag is scanned or a finder writes to you. Works even when the site is closed. 100% free — no phone number needed.",
+            push_turn_on: "Turn on notifications",
+            push_turn_off: "Turn off notifications",
+            push_enabled: "Notifications are ON — we just sent you a test.",
+            push_disabled: "Notifications turned off.",
+            push_denied: "Your browser blocked notifications. Allow them in site settings and try again.",
+            push_failed: "Couldn't set up notifications. Please try again.",
+            push_unsupported: "This browser doesn't support push notifications. Try Chrome or install the app from your browser menu.",
+            push_not_configured: "The server hasn't set up push keys yet — see docs/ACTIVATION_GUIDE.md.",
         },
         claim: {
             title: "Claim this tag",
@@ -413,8 +432,8 @@ const dict = {
             unclaimed_title: "यह टैग अभी क्लेम नहीं किया गया है",
             unclaimed_body: "अगर यह आपका है, तो साइन इन करके इसे क्लेम करें।",
             tag_not_found: "यह टैग नहीं मिला।",
-            tag_not_found_help: "QR ग़लत प्रिंट हुआ हो सकता है, या यह InfoTag नहीं है।",
-            powered_by: "InfoTag — गोपनीयता-प्रथम, कोई ऐप नहीं।",
+            tag_not_found_help: "QR ग़लत प्रिंट हुआ हो सकता है, या यह Info-Tag नहीं है।",
+            powered_by: "Info-Tag — गोपनीयता-प्रथम, कोई ऐप नहीं।",
         },
         emergency: {
             heading: "मेडिकल इमरजेंसी आईडी",
@@ -439,14 +458,14 @@ const dict = {
             hero_title: "एक स्कैन — और वे आप तक पहुँच जाते हैं।",
             hero_title_hl: "आपका नंबर गुप्त रहता है।",
             hero_subtitle:
-                "अपनी बाइक, चाबी, बैग या पालतू जानवर पर एक छोटा-सा InfoTag स्टिकर लगाएँ। कभी खो जाए, तो कोई भी भला इंसान अपने फ़ोन का कैमरा दिखाकर आपको तुरंत बता सकता है। न कोई ऐप, न कोई पैसा। और आपका फ़ोन नंबर कोई नहीं देख सकता।",
+                "अपनी बाइक, चाबी, बैग या पालतू जानवर पर एक छोटा-सा Info-Tag स्टिकर लगाएँ। कभी खो जाए, तो कोई भी भला इंसान अपने फ़ोन का कैमरा दिखाकर आपको तुरंत बता सकता है। न कोई ऐप, न कोई पैसा। और आपका फ़ोन नंबर कोई नहीं देख सकता।",
             cta_primary: "मुफ़्त टैग पाएँ",
             cta_demo: "लाइव स्कैन डेमो देखें",
             hero_note: "कोई ऐप नहीं · हर फ़ोन कैमरा चलेगा · 100% मुफ़्त",
             tag_scan_to_reach: "मालिक तक पहुँचने के लिए स्कैन करें",
             tag_tap_demo: "● डेमो के लिए टैप करें",
             // Scan demo modal
-            demo_title: "InfoTag · खोजने वाले का पेज",
+            demo_title: "Info-Tag · खोजने वाले का पेज",
             demo_scanned: "टैग स्कैन हुआ · DEMO-TAG",
             demo_headline: "यह बाइक पास के किसी इंसान की है",
             demo_sub:
@@ -466,7 +485,7 @@ const dict = {
             // How it works
             how_it_works: "यह कैसे काम करता है",
             how_title: "चिपकाएँ। भूल जाएँ। जुड़े रहें।",
-            how_lead: "तीन आसान कदम। अगर आप स्टिकर चिपका सकते हैं, तो InfoTag चला सकते हैं।",
+            how_lead: "तीन आसान कदम। अगर आप स्टिकर चिपका सकते हैं, तो Info-Tag चला सकते हैं।",
             how_step_1: "अपना टैग चिपकाएँ",
             how_step_1_desc:
                 "इस वेबसाइट पर टैग बनाएँ और स्टिकर मुफ़्त प्रिंट करें। अपनी चीज़ पर चिपका दें। बस दो मिनट लगते हैं।",
@@ -481,7 +500,7 @@ const dict = {
             uses_title: "एक टैग,",
             uses_title_hl: "ज़िंदगी की हर जगह",
             uses_lead:
-                "गेट रोकता स्कूटर हो या खोया स्कूल बैग — InfoTag खोजने वाले को सेकंडों में आपसे जोड़ देता है।",
+                "गेट रोकता स्कूटर हो या खोया स्कूल बैग — Info-Tag खोजने वाले को सेकंडों में आपसे जोड़ देता है।",
             uc_vehicle: "कार और बाइक",
             uc_vehicle_d: "ग़लत पार्किंग? लाइट जलती रह गई? लोग आपको बता सकते हैं — बिना आपका नंबर कहीं लिखे।",
             uc_keys: "चाबियाँ",
@@ -501,11 +520,11 @@ const dict = {
             // Features
             feat_kicker: "आपको क्या मिलता है",
             feat_title: "स्मार्ट टैग की हर सुविधा — मुफ़्त",
-            feat_lead: "दूसरी कंपनियाँ ये सुविधाएँ एक-एक करके बेचती हैं। InfoTag आपको सब ₹0 में देता है।",
+            feat_lead: "दूसरी कंपनियाँ ये सुविधाएँ एक-एक करके बेचती हैं। Info-Tag आपको सब ₹0 में देता है।",
             badge_core: "मूल",
             badge_new: "नया",
             f1: "छिपा नंबर (मास्क्ड)",
-            f1_d: "खोजने वाले InfoTag के ज़रिए आप तक पहुँचते हैं। आपका असली नंबर कभी नहीं दिखता, न उनके फ़ोन में सेव होता है।",
+            f1_d: "खोजने वाले Info-Tag के ज़रिए आप तक पहुँचते हैं। आपका असली नंबर कभी नहीं दिखता, न उनके फ़ोन में सेव होता है।",
             f2: "किसी तरफ़ कोई ऐप नहीं",
             f2_d: "खोजने वाला कैमरा इस्तेमाल करता है। आपको ईमेल, WhatsApp या SMS पर अलर्ट मिलता है। कोई कुछ इंस्टॉल नहीं करता।",
             f3: "WhatsApp और SMS अलर्ट",
@@ -525,7 +544,7 @@ const dict = {
             // Get tags (all free)
             tags_kicker: "टैग पाएँ",
             tags_title: "चुनें अपना",
-            tags_title_hl: "InfoTag",
+            tags_title_hl: "Info-Tag",
             tags_lead: "सब कुछ मुफ़्त है। घर पर किसी भी प्रिंटर से प्रिंट करें, या स्पॉन्सर्ड छपा टैग माँगें।",
             price_free: "₹0",
             price_free_note: "हमेशा मुफ़्त",
@@ -570,7 +589,7 @@ const dict = {
             // CTA band
             band_title: "सबसे पहले आप",
             band_sub:
-                "InfoTag हर भारतीय परिवार के लिए मुफ़्त है। अभी अपना पहला टैग बनाएँ, या सीधे संस्थापकों से बात करें।",
+                "Info-Tag हर भारतीय परिवार के लिए मुफ़्त है। अभी अपना पहला टैग बनाएँ, या सीधे संस्थापकों से बात करें।",
             band_btn: "WhatsApp करें → +91 89042 23100",
             // Footer
             footer_tagline:
@@ -581,7 +600,7 @@ const dict = {
         auth: {
             sign_in_title: "वापस स्वागत है",
             sign_in_subtitle: "अपने टैग और इमरजेंसी प्रोफ़ाइल देखने के लिए साइन इन करें।",
-            sign_up_title: "InfoTag खाता बनाएँ",
+            sign_up_title: "Info-Tag खाता बनाएँ",
             sign_up_subtitle: "मुफ़्त। कोई कार्ड नहीं, कोई ऐप नहीं, कोई स्पैम नहीं।",
             email: "ईमेल",
             password: "पासवर्ड",
@@ -606,6 +625,7 @@ const dict = {
             luggage: "सामान",
             keys: "चाबियाँ",
             medical: "मेडिकल",
+            special: "विशेष योग्यता",
             general: "सामान्य",
             status_active: "सक्रिय",
             status_lost: "खोया हुआ",
@@ -641,6 +661,10 @@ const dict = {
             vehicle_plate: "लाइसेंस प्लेट",
             pet_name: "पालतू का नाम",
             pet_breed: "नस्ल",
+            guardian_name: "अभिभावक का नाम",
+            guardian_phone: "अभिभावक का फ़ोन (मदद करने वालों को दिखेगा — यही मक़सद है)",
+            special_notes: "मदद करने वाले को क्या पता होना चाहिए (जैसे 'मैं बोल नहीं सकता/सकती। कृपया धैर्य रखें।')",
+            home_area: "घर का इलाक़ा / लैंडमार्क (जैसे 'सिटी मॉल के पास, इंदौर')",
             note: "नोट",
             save: "सेव करें",
             create: "टैग बनाएँ",

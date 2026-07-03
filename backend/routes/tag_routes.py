@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import io
-import os
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -21,16 +20,14 @@ from models import (
     TagUpdatePayload,
 )
 from notifications import masked_call_enabled
+from push import push_owner
+from urls import resolve_site_url
 
 router = APIRouter(prefix="/api", tags=["tags"])
 
 
 async def _current_user_dep(request: Request) -> dict:
     return await get_current_user(request, get_db())
-
-
-def _site_url() -> str:
-    return os.environ.get("SITE_URL", "").rstrip("/")
 
 
 def _tag_doc_to_out(doc: dict) -> dict:
@@ -128,6 +125,7 @@ async def delete_tag(tag_id: str, user: dict = Depends(_current_user_dep)) -> di
 @router.get("/tags/{tag_id}/qr.png")
 async def tag_qr_png(
     tag_id: str,
+    request: Request,
     download: bool = False,
     user: dict = Depends(_current_user_dep),
 ) -> StreamingResponse:
@@ -135,7 +133,10 @@ async def tag_qr_png(
     doc = await db.tags.find_one({"id": tag_id, "owner_id": user["id"]}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Tag not found")
-    url = f"{_site_url()}/api/finder/{doc['slug']}"
+    # Absolute URL is critical: a QR with a relative path is unopenable on
+    # phones.  resolve_site_url falls back to the request origin when the
+    # SITE_URL env var is missing, so QRs always work.
+    url = f"{resolve_site_url(request)}/api/finder/{doc['slug']}"
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -152,7 +153,7 @@ async def tag_qr_png(
     # gives the browser a sensible filename for a right-click/save or a
     # programmatic download.
     disposition = "attachment" if download else "inline"
-    filename = f"infotag-{doc['slug']}-qr.png"
+    filename = f"info-tag-{doc['slug']}-qr.png"
     return StreamingResponse(
         buf,
         media_type="image/png",
@@ -240,6 +241,12 @@ async def get_public_tag(slug: str, request: Request) -> dict:
                 "user_agent": ua,
             }
         )
+        # Free Web Push scan alert (opt-in via notify_on_scan)
+        if doc.get("owner_id"):
+            owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+            if owner and owner.get("notify_on_scan"):
+                name = doc.get("display_name") or doc.get("label") or "your tag"
+                await push_owner(db, owner["id"], "Info-Tag · tag scanned 👀", f"Someone just scanned “{name}”.", "/dashboard")
 
     emergency = None
     if doc.get("type") == "medical":
