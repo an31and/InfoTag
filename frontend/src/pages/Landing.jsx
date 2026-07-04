@@ -329,11 +329,11 @@ export default function LandingPage() {
                             <ul className="space-y-2 text-sm">
                                 <li className="flex items-center gap-1.5" data-testid="footer-founder">
                                     <Cloud className="h-3.5 w-3.5 text-accent shrink-0" />
-                                    Founder: <span className="text-white font-semibold">Anand Lakhera (Cloud FinOps Engineer & DevOps Consultant)</span>
+                                    Design&Built by : <span className="text-white font-semibold">Anand Lakhera (Cloud FinOps Engineer & DevOps Consultant)</span>
                                 </li>
                                 <li className="flex items-center gap-1.5" data-testid="footer-cofounder">
                                     <Users className="h-3.5 w-3.5 text-accent shrink-0" />
-                                    Co-Founder: <span className="text-white font-semibold">Devesh Sen (Engineer & Social Activist)</span>
+                                    Supported by: <span className="text-white font-semibold">Devesh Sen (Engineer & Social Activist)</span>
                                 </li>
                                 <li className="flex items-center gap-1.5" data-testid="footer-phone">
                                     <Phone className="h-3.5 w-3.5 text-accent shrink-0" />
