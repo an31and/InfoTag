@@ -1,26 +1,27 @@
 import { useEffect, useRef, useState } from "react";
+import { Play, Volume2, VolumeX } from "lucide-react";
 
+import { VIDEOS } from "../constants/videos";
 import { useI18n } from "../lib/i18n";
 
-// 10-second explainer clips (frontend/public/videos/). overview is portrait
-// (720×1280), the other two are landscape (1280×720) — object-contain on a
-// dark card handles both without cropping.
-const VIDEOS = [
-    { src: "/videos/overview.mp4", key: "video_overview", portrait: true },
-    { src: "/videos/how-it-works.mp4", key: "video_how", portrait: false },
-    { src: "/videos/use-cases.mp4", key: "video_uses", portrait: false },
-];
-
 /**
- * Swipeable strip of 10s use-case clips, shown right under the hero so it's
+ * Swipeable strip of short use-case clips, shown right under the hero so it's
  * the first thing a mobile visitor sees. Native CSS scroll-snap does the
  * swiping (no library); an IntersectionObserver plays only the slide in
- * view so three videos never download/decode at once on slow connections.
+ * view so several videos never download/decode at once on slow connections.
+ *
+ * Autoplay must start muted (every mobile browser enforces this), so each
+ * MP4 slide gets a speaker button — one tap turns the sound on. YouTube
+ * entries render as a thumbnail that swaps to the real player on tap.
+ * The list of videos lives in src/constants/videos.js.
  */
 export function UseCaseVideos() {
     const { t } = useI18n();
     const trackRef = useRef(null);
     const [active, setActive] = useState(0);
+    const [soundOn, setSoundOn] = useState(null); // index of the (single) unmuted slide
+
+    const caption = (v) => (v.key ? t(`landing.${v.key}`) : v.title || "");
 
     useEffect(() => {
         const track = trackRef.current;
@@ -33,13 +34,16 @@ export function UseCaseVideos() {
         const io = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
+                    const idx = Number(entry.target.dataset.slide);
                     const video = entry.target.querySelector("video");
-                    if (!video) return;
                     if (entry.isIntersecting && entry.intersectionRatio > 0.55) {
-                        setActive(Number(entry.target.dataset.slide));
-                        video.play().catch(() => {});
+                        setActive(idx);
+                        video?.play().catch(() => {});
                     } else {
-                        video.pause();
+                        video?.pause();
+                        // Swiping away from an unmuted clip re-mutes it, so audio
+                        // never plays from an off-screen slide.
+                        setSoundOn((cur) => (cur === idx ? null : cur));
                     }
                 });
             },
@@ -48,6 +52,16 @@ export function UseCaseVideos() {
         slides.forEach((s) => io.observe(s));
         return () => io.disconnect();
     }, []);
+
+    const toggleSound = (i) => {
+        const next = soundOn === i ? null : i;
+        setSoundOn(next);
+        const track = trackRef.current;
+        track?.querySelectorAll("[data-slide]").forEach((slide) => {
+            const video = slide.querySelector("video");
+            if (video) video.muted = Number(slide.dataset.slide) !== next;
+        });
+    };
 
     const scrollTo = (i) => {
         const track = trackRef.current;
@@ -76,35 +90,48 @@ export function UseCaseVideos() {
             >
                 {VIDEOS.map((v, i) => (
                     <figure
-                        key={v.src}
+                        key={v.src || v.youtubeId}
                         data-slide={i}
                         className="snap-center shrink-0 w-[86%] sm:w-[360px] first:ml-auto last:mr-auto"
                         data-testid={`usecase-video-${i}`}
                     >
-                        <div className="rounded-2xl overflow-hidden border border-white/10 bg-black h-[380px] sm:h-[420px] grid place-items-center">
-                            <video
-                                src={v.src}
-                                muted
-                                loop
-                                playsInline
-                                preload={i === 0 ? "auto" : "metadata"}
-                                className={`h-full w-full ${v.portrait ? "object-cover" : "object-contain"}`}
-                                aria-label={t(`landing.${v.key}`)}
-                            />
+                        <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black h-[380px] sm:h-[420px] grid place-items-center">
+                            {v.youtubeId ? (
+                                <LiteYouTube id={v.youtubeId} label={caption(v)} />
+                            ) : (
+                                <>
+                                    <video
+                                        src={v.src}
+                                        muted
+                                        loop
+                                        playsInline
+                                        preload={i === 0 ? "auto" : "metadata"}
+                                        className={`h-full w-full ${v.portrait ? "object-cover" : "object-contain"}`}
+                                        aria-label={caption(v)}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleSound(i)}
+                                        aria-label={soundOn === i ? "Mute" : "Unmute"}
+                                        className="absolute bottom-3 right-3 w-10 h-10 rounded-full grid place-items-center bg-black/60 backdrop-blur border border-white/25 text-white active:scale-95 transition-transform"
+                                        data-testid={`usecase-video-sound-${i}`}
+                                    >
+                                        {soundOn === i ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                                    </button>
+                                </>
+                            )}
                         </div>
-                        <figcaption className="mt-2.5 text-center text-sm font-semibold text-white/85">
-                            {t(`landing.${v.key}`)}
-                        </figcaption>
+                        <figcaption className="mt-2.5 text-center text-sm font-semibold text-white/85">{caption(v)}</figcaption>
                     </figure>
                 ))}
             </div>
             <div className="mt-3 flex justify-center gap-2" role="tablist" aria-label={t("landing.videos_title")}>
                 {VIDEOS.map((v, i) => (
                     <button
-                        key={v.src}
+                        key={v.src || v.youtubeId}
                         role="tab"
                         aria-selected={active === i}
-                        aria-label={t(`landing.${v.key}`)}
+                        aria-label={caption(v)}
                         onClick={() => scrollTo(i)}
                         className={`h-2 rounded-full transition-all ${active === i ? "w-6 bg-accent" : "w-2 bg-white/25"}`}
                         data-testid={`usecase-video-dot-${i}`}
@@ -113,5 +140,47 @@ export function UseCaseVideos() {
             </div>
             <p className="mt-3 text-center sm:hidden font-mono text-[11px] tracking-[0.1em] text-white/40">{t("landing.videos_hint")}</p>
         </section>
+    );
+}
+
+/**
+ * Click-to-load YouTube embed: shows only the thumbnail (one small image)
+ * until tapped, then swaps in the real player with sound. Keeps the landing
+ * page light — no YouTube JS loads unless the visitor asks for it.
+ */
+function LiteYouTube({ id, label }) {
+    const [playing, setPlaying] = useState(false);
+
+    if (playing) {
+        return (
+            <iframe
+                src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`}
+                title={label}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full border-0"
+            />
+        );
+    }
+    return (
+        <button
+            type="button"
+            onClick={() => setPlaying(true)}
+            aria-label={`Play: ${label}`}
+            className="relative h-full w-full group"
+            data-testid={`youtube-thumb-${id}`}
+        >
+            <img
+                src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+                alt={label}
+                loading="lazy"
+                className="h-full w-full object-cover"
+            />
+            <span className="absolute inset-0 grid place-items-center bg-black/25 group-hover:bg-black/10 transition-colors">
+                <span className="w-14 h-14 rounded-full grid place-items-center bg-accent text-white shadow-lg shadow-black/40">
+                    <Play className="h-6 w-6 translate-x-0.5" fill="currentColor" />
+                </span>
+            </span>
+        </button>
     );
 }
