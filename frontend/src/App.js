@@ -9,6 +9,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 
 import { AppShell } from "@/components/AppShell";
+import { LanguagePrompt } from "@/components/LanguagePrompt";
 import { Toaster } from "@/components/ui/sonner";
 
 import AdminPage from "@/pages/Admin";
@@ -126,6 +127,7 @@ export default function App() {
                 <BrowserRouter>
                     <AuthProvider>
                         <AppRouter />
+                        <LanguagePrompt />
                         <Toaster position="top-center" richColors />
                     </AuthProvider>
                 </BrowserRouter>

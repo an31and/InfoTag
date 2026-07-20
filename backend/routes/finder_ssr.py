@@ -33,8 +33,22 @@ router = APIRouter(prefix="/api/finder", tags=["finder-ssr"])
 
 
 # ---------------------------------------------------------------------------
-# Tiny i18n (server-side) — English + Hindi only; the SPA carries the rest.
+# Tiny i18n (server-side) — all 7 languages the SPA supports, because the
+# finder page is the one a stranger sees and must work standalone (no JS).
+# Default is Hindi; ?lang=xx and Accept-Language override it.
 # ---------------------------------------------------------------------------
+DEFAULT_LANG = "hi"
+
+LANG_LABELS = {
+    "hi": "हिं",
+    "en": "EN",
+    "mr": "मरा",
+    "bn": "বাং",
+    "ta": "த",
+    "te": "తె",
+    "kn": "ಕ",
+}
+
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
         "header": "Hi, a kind person scanned this tag.",
@@ -57,8 +71,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "tag_not_found_help": "The QR may have been misprinted, or this code isn't an Info-Tag.",
         "powered_by": "Powered by Info-Tag — privacy-first, no app needed.",
         "made_in_india": "Made in India",
-        "lang_switch": "हिन्दी",
+        "claim_btn": "Claim this tag",
         "back": "← Back",
+        "em_notes": "Notes",
         "em_heading": "MEDICAL EMERGENCY ID",
         "em_blood": "Blood group",
         "em_allergies": "Allergies",
@@ -108,8 +123,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "tag_not_found_help": "QR ग़लत प्रिंट हुआ हो सकता है।",
         "powered_by": "Info-Tag — गोपनीयता-प्रथम, कोई ऐप नहीं।",
         "made_in_india": "मेड इन इंडिया",
-        "lang_switch": "English",
+        "claim_btn": "यह टैग क्लेम करें",
         "back": "← वापस",
+        "em_notes": "नोट्स",
         "em_heading": "मेडिकल इमरजेंसी आईडी",
         "em_blood": "ब्लड ग्रुप",
         "em_allergies": "एलर्जी",
@@ -137,6 +153,266 @@ STRINGS: dict[str, dict[str, str]] = {
         "sp_notes": "मेरे बारे में ज़रूरी बातें",
         "sp_home": "मैं यहाँ के पास रहता/रहती हूँ",
         "sp_thanks": "रुककर मदद करने के लिए धन्यवाद। यह बहुत मायने रखता है।",
+    },
+    "mr": {
+        "header": "नमस्कार, एका सहृदय व्यक्तीने हा टॅग स्कॅन केला आहे.",
+        "owner_says": "मालकाचा निरोप",
+        "quick_actions": "झटपट कृती",
+        "wrong_parking": "वाहन चुकीच्या जागी पार्क आहे",
+        "headlight_on": "हेडलाइट / दिवे चालू राहिले आहेत",
+        "found_share": "हे मला सापडले — माझे लोकेशन पाठवा",
+        "send_message": "संदेश पाठवा",
+        "your_name": "तुमचे नाव (ऐच्छिक)",
+        "your_contact": "तुमचा फोन/ईमेल (ऐच्छिक)",
+        "message_ph": "मालकासाठी एक छोटा निरोप…",
+        "include_loc": "माझे अंदाजे लोकेशन जोडा",
+        "send": "पाठवा",
+        "sent_thanks": "पाठवले — धन्यवाद. मालकाला सूचना मिळाली आहे.",
+        "reported_lost": "हा टॅग हरवल्याची नोंद आहे. कृपया मालकाला मदत करा.",
+        "unclaimed_title": "हा टॅग अजून क्लेम केलेला नाही",
+        "unclaimed_body": "हा टॅग तुमचा असेल, तर साइन इन करून क्लेम करा.",
+        "tag_not_found": "हा टॅग सापडला नाही.",
+        "tag_not_found_help": "QR चुकीचा छापला असेल, किंवा हा Info-Tag नाही.",
+        "powered_by": "Info-Tag — गोपनीयता-प्रथम, अ‍ॅपची गरज नाही.",
+        "made_in_india": "मेड इन इंडिया",
+        "claim_btn": "हा टॅग क्लेम करा",
+        "back": "← मागे",
+        "em_heading": "वैद्यकीय आणीबाणी ओळखपत्र",
+        "em_blood": "रक्तगट",
+        "em_allergies": "अ‍ॅलर्जी",
+        "em_chronic": "दीर्घकालीन आजार",
+        "em_notes": "नोंदी",
+        "em_call": "आपत्कालीन संपर्काला कॉल करा",
+        "em_ps": "जवळचे पोलीस ठाणे",
+        "em_disclaimer": "मालकाच्या संमतीने दाखवलेली माहिती.",
+        "verify_notice": "कृती करण्यापूर्वी माहितीची खात्री करा.",
+        "last_updated": "शेवटचे अपडेट",
+        "contact_owner": "मालकाशी संपर्क करा",
+        "call_owner": "मालकाला कॉल करा",
+        "whatsapp_owner": "मालकाला WhatsApp करा",
+        "sms_owner": "मालकाला SMS करा",
+        "request_callback": "कॉल-बॅकची विनंती करा",
+        "callback_hint": "तुमचा नंबर द्या — मालकाला लगेच सूचना मिळेल आणि ते तुम्हाला कॉल करतील. त्यांचा नंबर खासगी राहील.",
+        "your_phone": "तुमचा फोन नंबर",
+        "callback_send": "मालकाला कळवा",
+        "privacy_note": "गोपनीयता-सुरक्षित: मालकाचा फोन नंबर कधीही दाखवला जात नाही.",
+        "wa_prefill": "नमस्कार! मी तुमचा Info-Tag स्कॅन केला",
+        "reward_offered": "परत केल्यास बक्षीस",
+        "sp_heading": "कृपया मला मदत करा",
+        "sp_body": "कदाचित मी बोलू शकणार नाही किंवा प्रश्नांची उत्तरे देऊ शकणार नाही. कृपया माझ्याशी धीराने आणि दयेने वागा.",
+        "sp_guardian": "माझे पालक",
+        "sp_call_guardian": "माझ्या पालकांना कॉल करा",
+        "sp_notes": "माझ्याबद्दल महत्त्वाच्या गोष्टी",
+        "sp_home": "मी इथे जवळ राहतो/राहते",
+        "sp_thanks": "थांबून मदत केल्याबद्दल धन्यवाद. याचा खूप अर्थ आहे.",
+    },
+    "bn": {
+        "header": "নমস্কার, একজন সহৃদয় মানুষ এই ট্যাগটি স্ক্যান করেছেন।",
+        "owner_says": "মালিকের বার্তা",
+        "quick_actions": "দ্রুত পদক্ষেপ",
+        "wrong_parking": "গাড়ি ভুল জায়গায় পার্ক করা",
+        "headlight_on": "হেডলাইট / আলো জ্বলে আছে",
+        "found_share": "এটি আমি পেয়েছি — আমার লোকেশন পাঠান",
+        "send_message": "বার্তা পাঠান",
+        "your_name": "আপনার নাম (ঐচ্ছিক)",
+        "your_contact": "আপনার ফোন/ইমেল (ঐচ্ছিক)",
+        "message_ph": "মালিকের জন্য একটি ছোট বার্তা…",
+        "include_loc": "আমার আনুমানিক লোকেশন যোগ করুন",
+        "send": "পাঠান",
+        "sent_thanks": "পাঠানো হয়েছে — ধন্যবাদ। মালিক খবর পেয়ে গেছেন।",
+        "reported_lost": "এই ট্যাগটি হারানো বলে জানানো হয়েছে। দয়া করে সাহায্য করুন।",
+        "unclaimed_title": "এই ট্যাগটি এখনো দাবি করা হয়নি",
+        "unclaimed_body": "এটি যদি আপনার হয়, সাইন ইন করে দাবি করুন।",
+        "tag_not_found": "এই ট্যাগটি খুঁজে পাওয়া যায়নি।",
+        "tag_not_found_help": "QR ভুল ছাপা হয়ে থাকতে পারে, বা এটি Info-Tag নয়।",
+        "powered_by": "Info-Tag — গোপনীয়তা-প্রথম, কোনো অ্যাপ লাগে না।",
+        "made_in_india": "মেড ইন ইন্ডিয়া",
+        "claim_btn": "এই ট্যাগ দাবি করুন",
+        "back": "← পিছনে",
+        "em_heading": "মেডিক্যাল জরুরি পরিচয়পত্র",
+        "em_blood": "রক্তের গ্রুপ",
+        "em_allergies": "অ্যালার্জি",
+        "em_chronic": "দীর্ঘস্থায়ী রোগ",
+        "em_notes": "নোট",
+        "em_call": "জরুরি যোগাযোগে কল করুন",
+        "em_ps": "নিকটতম থানা",
+        "em_disclaimer": "মালিকের সম্মতিতে দেখানো তথ্য।",
+        "verify_notice": "পদক্ষেপ নেওয়ার আগে তথ্য যাচাই করুন।",
+        "last_updated": "সর্বশেষ আপডেট",
+        "contact_owner": "মালিকের সঙ্গে যোগাযোগ করুন",
+        "call_owner": "মালিককে কল করুন",
+        "whatsapp_owner": "মালিককে WhatsApp করুন",
+        "sms_owner": "মালিককে SMS করুন",
+        "request_callback": "কল-ব্যাকের অনুরোধ করুন",
+        "callback_hint": "আপনার নম্বর দিন — মালিক সঙ্গে সঙ্গে খবর পাবেন এবং আপনাকে কল করবেন। তাঁর নম্বর গোপন থাকবে।",
+        "your_phone": "আপনার ফোন নম্বর",
+        "callback_send": "মালিককে জানান",
+        "privacy_note": "গোপনীয়তা-সুরক্ষিত: মালিকের ফোন নম্বর কখনো দেখানো হয় না।",
+        "wa_prefill": "নমস্কার! আমি আপনার Info-Tag স্ক্যান করেছি",
+        "reward_offered": "ফেরত দিলে পুরস্কার",
+        "sp_heading": "দয়া করে আমাকে সাহায্য করুন",
+        "sp_body": "আমি হয়তো কথা বলতে বা প্রশ্নের উত্তর দিতে পারব না। দয়া করে আমার সঙ্গে ধৈর্য ও সদয় আচরণ করুন।",
+        "sp_guardian": "আমার অভিভাবক",
+        "sp_call_guardian": "আমার অভিভাবককে কল করুন",
+        "sp_notes": "আমার সম্পর্কে জরুরি কথা",
+        "sp_home": "আমি এর কাছে থাকি",
+        "sp_thanks": "থেমে সাহায্য করার জন্য ধন্যবাদ। এটা অনেক কিছু।",
+    },
+    "ta": {
+        "header": "வணக்கம், ஒரு நல்ல மனிதர் இந்த டேக்கை ஸ்கேன் செய்துள்ளார்.",
+        "owner_says": "உரிமையாளரின் செய்தி",
+        "quick_actions": "விரைவு செயல்கள்",
+        "wrong_parking": "வாகனம் தவறான இடத்தில் நிறுத்தப்பட்டுள்ளது",
+        "headlight_on": "ஹெட்லைட் / விளக்குகள் எரிகின்றன",
+        "found_share": "இது எனக்குக் கிடைத்தது — என் இருப்பிடத்தை அனுப்பு",
+        "send_message": "செய்தி அனுப்பு",
+        "your_name": "உங்கள் பெயர் (விருப்பம்)",
+        "your_contact": "உங்கள் ஃபோன்/மின்னஞ்சல் (விருப்பம்)",
+        "message_ph": "உரிமையாளருக்கு ஒரு சிறு குறிப்பு…",
+        "include_loc": "என் தோராயமான இருப்பிடத்தைச் சேர்",
+        "send": "அனுப்பு",
+        "sent_thanks": "அனுப்பப்பட்டது — நன்றி. உரிமையாளருக்குத் தகவல் சென்றுவிட்டது.",
+        "reported_lost": "இந்த டேக் தொலைந்ததாகப் பதிவாகியுள்ளது. உதவுங்கள்.",
+        "unclaimed_title": "இந்த டேக் இன்னும் உரிமை கோரப்படவில்லை",
+        "unclaimed_body": "இது உங்களுடையதாக இருந்தால், உள்நுழைந்து உரிமை கோருங்கள்.",
+        "tag_not_found": "இந்த டேக்கைக் கண்டுபிடிக்க முடியவில்லை.",
+        "tag_not_found_help": "QR தவறாக அச்சிடப்பட்டிருக்கலாம், அல்லது இது Info-Tag அல்ல.",
+        "powered_by": "Info-Tag — தனியுரிமை-முதல், ஆப் தேவையில்லை.",
+        "made_in_india": "மேட் இன் இந்தியா",
+        "claim_btn": "இந்த டேக்கை உரிமை கோரு",
+        "back": "← பின்செல்",
+        "em_heading": "மருத்துவ அவசர அடையாள அட்டை",
+        "em_blood": "இரத்த வகை",
+        "em_allergies": "ஒவ்வாமைகள்",
+        "em_chronic": "நாள்பட்ட நோய்கள்",
+        "em_notes": "குறிப்புகள்",
+        "em_call": "அவசரத் தொடர்புக்கு அழை",
+        "em_ps": "அருகிலுள்ள காவல் நிலையம்",
+        "em_disclaimer": "உரிமையாளரின் சம்மதத்துடன் காட்டப்படும் தகவல்.",
+        "verify_notice": "செயல்படும் முன் தகவலைச் சரிபார்க்கவும்.",
+        "last_updated": "கடைசியாக புதுப்பிக்கப்பட்டது",
+        "contact_owner": "உரிமையாளரைத் தொடர்பு கொள்ளுங்கள்",
+        "call_owner": "உரிமையாளரை அழைக்கவும்",
+        "whatsapp_owner": "உரிமையாளருக்கு WhatsApp செய்யவும்",
+        "sms_owner": "உரிமையாளருக்கு SMS செய்யவும்",
+        "request_callback": "திரும்ப அழைக்கக் கோருங்கள்",
+        "callback_hint": "உங்கள் எண்ணைக் கொடுங்கள் — உரிமையாளருக்கு உடனே தகவல் சென்று அவர்கள் உங்களை அழைப்பார்கள். அவர்களின் எண் ரகசியமாக இருக்கும்.",
+        "your_phone": "உங்கள் ஃபோன் எண்",
+        "callback_send": "உரிமையாளருக்கு அறிவிக்கவும்",
+        "privacy_note": "தனியுரிமை-பாதுகாப்பு: உரிமையாளரின் ஃபோன் எண் ஒருபோதும் காட்டப்படாது.",
+        "wa_prefill": "வணக்கம்! உங்கள் Info-Tag-ஐ ஸ்கேன் செய்தேன்",
+        "reward_offered": "திருப்பித் தந்தால் பரிசு",
+        "sp_heading": "தயவுசெய்து எனக்கு உதவுங்கள்",
+        "sp_body": "என்னால் பேசவோ கேள்விகளுக்குப் பதிலளிக்கவோ முடியாமல் இருக்கலாம். என்னிடம் பொறுமையாகவும் அன்பாகவும் இருங்கள்.",
+        "sp_guardian": "என் பாதுகாவலர்",
+        "sp_call_guardian": "என் பாதுகாவலரை அழை",
+        "sp_notes": "என்னைப் பற்றி அறிய வேண்டியவை",
+        "sp_home": "நான் இதன் அருகில் வசிக்கிறேன்",
+        "sp_thanks": "நின்று உதவியதற்கு நன்றி. இது மிகவும் முக்கியம்.",
+    },
+    "te": {
+        "header": "నమస్తే, ఒక మంచి వ్యక్తి ఈ ట్యాగ్‌ను స్కాన్ చేశారు.",
+        "owner_says": "యజమాని సందేశం",
+        "quick_actions": "త్వరిత చర్యలు",
+        "wrong_parking": "వాహనం తప్పు చోట పార్క్ చేయబడింది",
+        "headlight_on": "హెడ్‌లైట్ / లైట్లు వెలుగుతున్నాయి",
+        "found_share": "ఇది నాకు దొరికింది — నా లొకేషన్ పంపండి",
+        "send_message": "సందేశం పంపండి",
+        "your_name": "మీ పేరు (ఐచ్ఛికం)",
+        "your_contact": "మీ ఫోన్/ఇమెయిల్ (ఐచ్ఛికం)",
+        "message_ph": "యజమాని కోసం చిన్న సందేశం…",
+        "include_loc": "నా సుమారు లొకేషన్ జోడించు",
+        "send": "పంపు",
+        "sent_thanks": "పంపబడింది — ధన్యవాదాలు. యజమానికి సమాచారం అందింది.",
+        "reported_lost": "ఈ ట్యాగ్ పోయినట్లు నమోదైంది. దయచేసి సహాయం చేయండి.",
+        "unclaimed_title": "ఈ ట్యాగ్ ఇంకా క్లెయిమ్ చేయబడలేదు",
+        "unclaimed_body": "ఇది మీదైతే, సైన్ ఇన్ చేసి క్లెయిమ్ చేయండి.",
+        "tag_not_found": "ఈ ట్యాగ్ కనబడలేదు.",
+        "tag_not_found_help": "QR తప్పుగా ముద్రించబడి ఉండవచ్చు, లేదా ఇది Info-Tag కాదు.",
+        "powered_by": "Info-Tag — గోప్యత-మొదటి, యాప్ అవసరం లేదు.",
+        "made_in_india": "మేడ్ ఇన్ ఇండియా",
+        "claim_btn": "ఈ ట్యాగ్‌ను క్లెయిమ్ చేయి",
+        "back": "← వెనుకకు",
+        "em_heading": "వైద్య అత్యవసర గుర్తింపు కార్డు",
+        "em_blood": "రక్త వర్గం",
+        "em_allergies": "అలర్జీలు",
+        "em_chronic": "దీర్ఘకాలిక వ్యాధులు",
+        "em_notes": "గమనికలు",
+        "em_call": "అత్యవసర సంప్రదింపుకు కాల్ చేయండి",
+        "em_ps": "సమీప పోలీస్ స్టేషన్",
+        "em_disclaimer": "యజమాని అనుమతితో చూపబడిన సమాచారం.",
+        "verify_notice": "చర్యకు ముందు సమాచారాన్ని ధృవీకరించండి.",
+        "last_updated": "చివరి నవీకరణ",
+        "contact_owner": "యజమానిని సంప్రదించండి",
+        "call_owner": "యజమానికి కాల్ చేయండి",
+        "whatsapp_owner": "యజమానికి WhatsApp చేయండి",
+        "sms_owner": "యజమానికి SMS చేయండి",
+        "request_callback": "తిరిగి కాల్ కోరండి",
+        "callback_hint": "మీ నంబర్ ఇవ్వండి — యజమానికి వెంటనే సమాచారం వెళ్లి వారు మీకు కాల్ చేస్తారు. వారి నంబర్ గోప్యంగా ఉంటుంది.",
+        "your_phone": "మీ ఫోన్ నంబర్",
+        "callback_send": "యజమానికి తెలియజేయండి",
+        "privacy_note": "గోప్యత-రక్షితం: యజమాని ఫోన్ నంబర్ ఎప్పటికీ చూపబడదు.",
+        "wa_prefill": "నమస్తే! మీ Info-Tag స్కాన్ చేశాను",
+        "reward_offered": "తిరిగి ఇచ్చినందుకు బహుమతి",
+        "sp_heading": "దయచేసి నాకు సహాయం చేయండి",
+        "sp_body": "నేను మాట్లాడలేకపోవచ్చు లేదా ప్రశ్నలకు జవాబివ్వలేకపోవచ్చు. దయచేసి నాతో ఓపికగా, దయగా ఉండండి.",
+        "sp_guardian": "నా సంరక్షకుడు",
+        "sp_call_guardian": "నా సంరక్షకుడికి కాల్ చేయండి",
+        "sp_notes": "నా గురించి తెలుసుకోవాల్సినవి",
+        "sp_home": "నేను దీని దగ్గర నివసిస్తాను",
+        "sp_thanks": "ఆగి సహాయం చేసినందుకు ధన్యవాదాలు. ఇది చాలా విలువైనది.",
+    },
+    "kn": {
+        "header": "ನಮಸ್ಕಾರ, ಒಬ್ಬ ಒಳ್ಳೆಯ ವ್ಯಕ್ತಿ ಈ ಟ್ಯಾಗ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ್ದಾರೆ.",
+        "owner_says": "ಮಾಲೀಕರ ಸಂದೇಶ",
+        "quick_actions": "ತ್ವರಿತ ಕ್ರಮಗಳು",
+        "wrong_parking": "ವಾಹನ ತಪ್ಪು ಜಾಗದಲ್ಲಿ ನಿಲ್ಲಿಸಲಾಗಿದೆ",
+        "headlight_on": "ಹೆಡ್‌ಲೈಟ್ / ದೀಪಗಳು ಉರಿಯುತ್ತಿವೆ",
+        "found_share": "ಇದು ನನಗೆ ಸಿಕ್ಕಿದೆ — ನನ್ನ ಸ್ಥಳ ಕಳುಹಿಸಿ",
+        "send_message": "ಸಂದೇಶ ಕಳುಹಿಸಿ",
+        "your_name": "ನಿಮ್ಮ ಹೆಸರು (ಐಚ್ಛಿಕ)",
+        "your_contact": "ನಿಮ್ಮ ಫೋನ್/ಇಮೇಲ್ (ಐಚ್ಛಿಕ)",
+        "message_ph": "ಮಾಲೀಕರಿಗೆ ಒಂದು ಸಣ್ಣ ಸಂದೇಶ…",
+        "include_loc": "ನನ್ನ ಅಂದಾಜು ಸ್ಥಳ ಸೇರಿಸಿ",
+        "send": "ಕಳುಹಿಸಿ",
+        "sent_thanks": "ಕಳುಹಿಸಲಾಗಿದೆ — ಧನ್ಯವಾದ. ಮಾಲೀಕರಿಗೆ ಸೂಚನೆ ತಲುಪಿದೆ.",
+        "reported_lost": "ಈ ಟ್ಯಾಗ್ ಕಳೆದಿದೆ ಎಂದು ವರದಿಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಸಹಾಯ ಮಾಡಿ.",
+        "unclaimed_title": "ಈ ಟ್ಯಾಗ್ ಇನ್ನೂ ಕ್ಲೈಮ್ ಆಗಿಲ್ಲ",
+        "unclaimed_body": "ಇದು ನಿಮ್ಮದಾದರೆ, ಸೈನ್ ಇನ್ ಮಾಡಿ ಕ್ಲೈಮ್ ಮಾಡಿ.",
+        "tag_not_found": "ಈ ಟ್ಯಾಗ್ ಸಿಗಲಿಲ್ಲ.",
+        "tag_not_found_help": "QR ತಪ್ಪಾಗಿ ಮುದ್ರಣವಾಗಿರಬಹುದು, ಅಥವಾ ಇದು Info-Tag ಅಲ್ಲ.",
+        "powered_by": "Info-Tag — ಖಾಸಗಿತನ-ಮೊದಲ, ಆ್ಯಪ್ ಬೇಕಿಲ್ಲ.",
+        "made_in_india": "ಮೇಡ್ ಇನ್ ಇಂಡಿಯಾ",
+        "claim_btn": "ಈ ಟ್ಯಾಗ್ ಕ್ಲೈಮ್ ಮಾಡಿ",
+        "back": "← ಹಿಂದೆ",
+        "em_heading": "ವೈದ್ಯಕೀಯ ತುರ್ತು ಗುರುತಿನ ಚೀಟಿ",
+        "em_blood": "ರಕ್ತದ ಗುಂಪು",
+        "em_allergies": "ಅಲರ್ಜಿಗಳು",
+        "em_chronic": "ದೀರ್ಘಕಾಲದ ಕಾಯಿಲೆಗಳು",
+        "em_notes": "ಟಿಪ್ಪಣಿಗಳು",
+        "em_call": "ತುರ್ತು ಸಂಪರ್ಕಕ್ಕೆ ಕರೆ ಮಾಡಿ",
+        "em_ps": "ಹತ್ತಿರದ ಪೊಲೀಸ್ ಠಾಣೆ",
+        "em_disclaimer": "ಮಾಲೀಕರ ಒಪ್ಪಿಗೆಯೊಂದಿಗೆ ತೋರಿಸಿದ ಮಾಹಿತಿ.",
+        "verify_notice": "ಕ್ರಮಕ್ಕೆ ಮೊದಲು ಮಾಹಿತಿ ಪರಿಶೀಲಿಸಿ.",
+        "last_updated": "ಕೊನೆಯ ನವೀಕರಣ",
+        "contact_owner": "ಮಾಲೀಕರನ್ನು ಸಂಪರ್ಕಿಸಿ",
+        "call_owner": "ಮಾಲೀಕರಿಗೆ ಕರೆ ಮಾಡಿ",
+        "whatsapp_owner": "ಮಾಲೀಕರಿಗೆ WhatsApp ಮಾಡಿ",
+        "sms_owner": "ಮಾಲೀಕರಿಗೆ SMS ಮಾಡಿ",
+        "request_callback": "ಮರಳಿ ಕರೆ ಕೇಳಿ",
+        "callback_hint": "ನಿಮ್ಮ ನಂಬರ್ ಕೊಡಿ — ಮಾಲೀಕರಿಗೆ ತಕ್ಷಣ ಸೂಚನೆ ಹೋಗಿ ಅವರು ನಿಮಗೆ ಕರೆ ಮಾಡುತ್ತಾರೆ. ಅವರ ನಂಬರ್ ಖಾಸಗಿಯಾಗಿ ಉಳಿಯುತ್ತದೆ.",
+        "your_phone": "ನಿಮ್ಮ ಫೋನ್ ನಂಬರ್",
+        "callback_send": "ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿ",
+        "privacy_note": "ಖಾಸಗಿತನ-ರಕ್ಷಿತ: ಮಾಲೀಕರ ಫೋನ್ ನಂಬರ್ ಎಂದಿಗೂ ತೋರಿಸಲಾಗುವುದಿಲ್ಲ.",
+        "wa_prefill": "ನಮಸ್ಕಾರ! ನಿಮ್ಮ Info-Tag ಸ್ಕ್ಯಾನ್ ಮಾಡಿದೆ",
+        "reward_offered": "ಮರಳಿಸಿದರೆ ಬಹುಮಾನ",
+        "sp_heading": "ದಯವಿಟ್ಟು ನನಗೆ ಸಹಾಯ ಮಾಡಿ",
+        "sp_body": "ನಾನು ಮಾತನಾಡಲು ಅಥವಾ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಲು ಆಗದಿರಬಹುದು. ದಯವಿಟ್ಟು ನನ್ನೊಂದಿಗೆ ತಾಳ್ಮೆ ಮತ್ತು ದಯೆಯಿಂದಿರಿ.",
+        "sp_guardian": "ನನ್ನ ಪೋಷಕರು",
+        "sp_call_guardian": "ನನ್ನ ಪೋಷಕರಿಗೆ ಕರೆ ಮಾಡಿ",
+        "sp_notes": "ನನ್ನ ಬಗ್ಗೆ ತಿಳಿಯಬೇಕಾದದ್ದು",
+        "sp_home": "ನಾನು ಇದರ ಹತ್ತಿರ ವಾಸಿಸುತ್ತೇನೆ",
+        "sp_thanks": "ನಿಂತು ಸಹಾಯ ಮಾಡಿದ್ದಕ್ಕೆ ಧನ್ಯವಾದ. ಇದು ಬಹಳ ಮುಖ್ಯ.",
     },
 }
 
@@ -182,6 +458,9 @@ footer{margin-top:24px;padding:16px;text-align:center;font-size:12px;color:#666;
 .thanks svg{width:48px;height:48px;color:#22c55e}
 .muted{color:#666;font-size:13px}
 .lang{font-size:13px;color:#666;text-decoration:none;border:1px solid #e5e5e5;padding:6px 10px;border-radius:9999px}
+.langs{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.langs .lang{padding:5px 8px;font-size:12px}
+.langs .lang.on{background:#0F172A;color:#fff;border-color:#0F172A}
 .icon-tag{color:#E25822;vertical-align:-3px;margin-right:4px}
 
 /* Emergency mode */
@@ -231,8 +510,17 @@ body.em{background:#fef2f2}
 """
 
 
+def _lang_bar(current: str) -> str:
+    """Row of ?lang= pills — plain links, so it works with zero JS."""
+    pills = "".join(
+        f'<a class="lang{" on" if code == current else ""}" href="?lang={code}" '
+        f'data-testid="finder-lang-{code}">{esc(label)}</a>'
+        for code, label in LANG_LABELS.items()
+    )
+    return f'<nav class="langs" aria-label="Language">{pills}</nav>'
+
+
 def render_layout(*, lang: str, body: str, emergency: bool = False, title: str = "Info-Tag") -> str:
-    other_lang = "hi" if lang == "en" else "en"
     body_class = "em" if emergency else ""
     return f"""<!doctype html>
 <html lang="{lang}">
@@ -251,7 +539,7 @@ def render_layout(*, lang: str, body: str, emergency: bool = False, title: str =
 <body class="{body_class}">
 <header><div class="wrap row">
 <a class="brand" href="/" data-testid="finder-brand"><span aria-hidden="true" class="icon-tag">⛓︎</span>Info-<span class="it">Tag</span></a>
-<a class="lang" href="?lang={other_lang}" data-testid="finder-lang-switch">{esc(STRINGS[lang]['lang_switch'])}</a>
+{_lang_bar(lang)}
 </div></header>
 <main class="wrap">{body}</main>
 <footer class="wrap">
@@ -278,7 +566,7 @@ def render_unclaimed(lang: str, slug: str) -> str:
 <div style="font-size:42px;line-height:1">⚐</div>
 <h1>{esc(t(lang,'unclaimed_title'))}</h1>
 <p class="muted">{esc(t(lang,'unclaimed_body'))}</p>
-<a class="btn-primary" href="/claim/{esc(slug)}" data-testid="finder-claim-btn" style="display:inline-block;margin-top:10px;padding:14px 22px;text-decoration:none">Claim this tag</a>
+<a class="btn-primary" href="/claim/{esc(slug)}" data-testid="finder-claim-btn" style="display:inline-block;margin-top:10px;padding:14px 22px;text-decoration:none">{esc(t(lang,'claim_btn'))}</a>
 </div>"""
     return render_layout(lang=lang, body=body, title=t(lang, "unclaimed_title"))
 
@@ -534,7 +822,7 @@ def render_emergency(lang: str, doc: dict, em: dict) -> str:
 {field(t(lang,'em_allergies'), em.get('allergies',''))}
 {field(t(lang,'em_chronic'), em.get('chronic_conditions',''))}
 {field(t(lang,'em_ps'), em.get('nearest_police_station',''))}
-{field('Notes', em.get('additional_notes',''))}
+{field(t(lang,'em_notes'), em.get('additional_notes',''))}
 <p class="muted" style="border-top:1px solid #fecaca;padding-top:10px;margin-top:14px">
 {esc(t(lang,'verify_notice'))}
 {(' · ' + esc(t(lang,'last_updated')) + ': ' + esc(last_str)) if last_str else ''}
@@ -556,15 +844,18 @@ def _sanitize(text: str) -> str:
 
 
 def _resolve_lang(request: Request, override: Optional[str] = None) -> str:
+    """?lang wins, then the phone's Accept-Language, then Hindi (site default)."""
     if override and override in STRINGS:
         return override
     qp = request.query_params.get("lang")
     if qp and qp in STRINGS:
         return qp
     accept = (request.headers.get("accept-language") or "").lower()
-    if accept.startswith("hi"):
-        return "hi"
-    return "en"
+    for part in accept.split(","):
+        code = part.split(";")[0].strip()[:2]
+        if code in STRINGS:
+            return code
+    return DEFAULT_LANG
 
 
 # ---------------------------------------------------------------------------
@@ -639,7 +930,7 @@ async def finder_action(
         raise HTTPException(status_code=400, detail="Invalid action")
 
     db = get_db()
-    lang = lang if lang in STRINGS else "en"
+    lang = lang if lang in STRINGS else DEFAULT_LANG
 
     # Honeypot — silently succeed so bots can't differentiate
     if bot_check:
