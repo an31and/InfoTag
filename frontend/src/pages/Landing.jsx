@@ -16,6 +16,7 @@ import { FeedbackSection } from "../components/FeedbackSection";
 import { LiveStats } from "../components/LiveStats";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { SponsorSection } from "../components/SponsorSection";
+import { UseCaseVideos } from "../components/UseCaseVideos";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { useI18n } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
@@ -76,7 +77,13 @@ export default function LandingPage() {
                     <div className="flex items-center gap-1">
                         <LanguageSwitcher compact />
                         <ThemeToggle />
-                        <Button variant="ghost" size="sm" onClick={() => navigate(user ? "/dashboard" : "/login")} data-testid="landing-sign-in">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hidden sm:inline-flex"
+                            onClick={() => navigate(user ? "/dashboard" : "/login")}
+                            data-testid="landing-sign-in"
+                        >
                             {t("common.sign_in")}
                         </Button>
                         <Button size="sm" className="rounded-full" onClick={goStart} data-testid="landing-sign-up">
@@ -146,6 +153,9 @@ export default function LandingPage() {
             </header>
 
             {demoOpen && <ScanDemo t={t} onClose={() => setDemoOpen(false)} />}
+
+            {/* 10-second explainer clips — first thing mobile visitors see after the hero */}
+            <UseCaseVideos />
 
             <LiveStats />
 

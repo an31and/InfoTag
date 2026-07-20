@@ -21,7 +21,7 @@ export function LanguageSwitcher({ compact = false }) {
                     className="gap-2"
                 >
                     <Languages className="h-4 w-4" />
-                    <span className="font-medium">{current.label}</span>
+                    <span className={`font-medium ${compact ? "hidden sm:inline" : ""}`}>{current.label}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[160px]">
