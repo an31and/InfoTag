@@ -25,6 +25,8 @@ export default function AuthPage({ mode = "login" }) {
     const location = useLocation();
 
     const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [identifier, setIdentifier] = useState(""); // login: mobile OR email
     const [password, setPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -37,12 +39,16 @@ export default function AuthPage({ mode = "login" }) {
             setError(t("auth.password_min"));
             return;
         }
+        if (isSignup && !phone.trim() && !email.trim()) {
+            setError(t("auth.need_mobile_or_email"));
+            return;
+        }
         setSubmitting(true);
         try {
             if (isSignup) {
-                await register(email, password, displayName);
+                await register({ phone, email, password, display_name: displayName });
             } else {
-                await login(email, password);
+                await login(identifier, password);
             }
             const next = location.state?.from?.pathname || "/dashboard";
             navigate(next, { replace: true });
@@ -73,6 +79,10 @@ export default function AuthPage({ mode = "login" }) {
                         t={t}
                         email={email}
                         setEmail={setEmail}
+                        phone={phone}
+                        setPhone={setPhone}
+                        identifier={identifier}
+                        setIdentifier={setIdentifier}
                         password={password}
                         setPassword={setPassword}
                         displayName={displayName}

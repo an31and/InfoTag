@@ -72,6 +72,10 @@ export function EmailPasswordForm({
     t,
     email,
     setEmail,
+    phone,
+    setPhone,
+    identifier,
+    setIdentifier,
     password,
     setPassword,
     displayName,
@@ -98,7 +102,7 @@ export function EmailPasswordForm({
 
             <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
                 <span className="flex-1 h-px bg-border" />
-                {t("auth.or_use_email")}
+                {isSignup ? t("auth.or_use_mobile") : t("auth.or_use_email")}
                 <span className="flex-1 h-px bg-border" />
             </div>
 
@@ -117,19 +121,51 @@ export function EmailPasswordForm({
                 </div>
             )}
 
-            <div className="space-y-1.5">
-                <Label htmlFor="email">{t("auth.email")}</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    data-testid={isSignup ? "register-email-input" : "login-email-input"}
-                />
-            </div>
+            {isSignup ? (
+                <>
+                    {/* Phone-first: mobile is the primary identity, email optional */}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="phone">{t("auth.mobile")}</Label>
+                        <Input
+                            id="phone"
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="+91 98765 43210"
+                            autoComplete="tel"
+                            inputMode="tel"
+                            data-testid="register-phone-input"
+                        />
+                        <p className="text-xs text-muted-foreground">{t("auth.mobile_help")}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="email">{t("auth.email_optional")}</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@example.com"
+                            autoComplete="email"
+                            data-testid="register-email-input"
+                        />
+                    </div>
+                </>
+            ) : (
+                <div className="space-y-1.5">
+                    <Label htmlFor="identifier">{t("auth.identifier")}</Label>
+                    <Input
+                        id="identifier"
+                        type="text"
+                        required
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        autoComplete="username"
+                        data-testid="login-identifier-input"
+                    />
+                </div>
+            )}
 
             <div className="space-y-1.5">
                 <Label htmlFor="password">{t("auth.password")}</Label>
