@@ -6,6 +6,7 @@ import {
     EyeOff,
     HandHeart,
     LayoutList,
+    MessageCircle,
     MessageSquareText,
     PackageCheck,
     ScanLine,
@@ -143,6 +144,8 @@ export default function AdminPage() {
             )}
 
             <LandingSectionsPanel />
+
+            <WhatsAppDiagnostics />
 
             {/* Scan trend — dependency-free mini bar chart */}
             <section className="surface p-6">
@@ -304,6 +307,139 @@ function LandingSectionsPanel() {
                     ))}
                 </div>
             )}
+        </section>
+    );
+}
+
+/**
+ * WhatsAppDiagnostics — makes the invisible visible. `send_whatsapp` in the
+ * request path swallows errors, so a misconfigured setup fails silently.
+ * This panel calls the admin diagnostic endpoints and shows Meta's *actual*
+ * response, so the reason a message didn't go out is obvious.
+ */
+function WhatsAppDiagnostics() {
+    const [health, setHealth] = useState(null);
+    const [checking, setChecking] = useState(false);
+    const [to, setTo] = useState("");
+    const [testResult, setTestResult] = useState(null);
+    const [sending, setSending] = useState(false);
+
+    const runHealth = async () => {
+        setChecking(true);
+        setHealth(null);
+        try {
+            const { data } = await api.get("/admin/whatsapp/health");
+            setHealth(data);
+        } catch (e) {
+            setHealth({ error: formatApiError(e) });
+        } finally {
+            setChecking(false);
+        }
+    };
+
+    const sendTest = async () => {
+        setSending(true);
+        setTestResult(null);
+        try {
+            const { data } = await api.post("/admin/whatsapp/test", { to });
+            setTestResult(data);
+        } catch (e) {
+            setTestResult({ error: formatApiError(e) });
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const cfg = health?.config;
+    const Dot = ({ ok }) => (
+        <span className={`inline-block w-2.5 h-2.5 rounded-full ${ok ? "bg-emerald-500" : "bg-red-500"}`} />
+    );
+
+    return (
+        <section className="surface p-6" data-testid="whatsapp-diagnostics">
+            <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-emerald-600" />
+                <h2 className="font-display font-bold">WhatsApp diagnostics</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+                Not receiving WhatsApp alerts? Run a health check, then send a test to your own number — the result shows exactly what Meta says.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" onClick={runHealth} disabled={checking} data-testid="wa-health-btn">
+                    {checking ? "Checking…" : "Run health check"}
+                </Button>
+            </div>
+
+            {cfg && (
+                <div className="mt-4 grid sm:grid-cols-2 gap-x-8 gap-y-1.5 text-sm">
+                    {[
+                        ["Access token set", cfg.token_set],
+                        ["Phone number ID set", cfg.phone_number_id_set],
+                        ["Business number set", cfg.business_number_set],
+                        ["Webhook verify token set", cfg.verify_token_set],
+                        ["App secret set (signatures)", cfg.app_secret_set],
+                        ["WhatsApp enabled", cfg.enabled],
+                    ].map(([label, ok]) => (
+                        <div key={label} className="flex items-center gap-2">
+                            <Dot ok={ok} /> <span className={ok ? "" : "text-muted-foreground"}>{label}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {health?.probe && (
+                <div className="mt-3 text-sm">
+                    <span className="font-medium">Live token check: </span>
+                    {health.probe.ok ? (
+                        <span className="text-emerald-600">
+                            ✓ Valid — number {health.probe.response?.display_phone_number || ""} ({health.probe.response?.verified_name || ""})
+                        </span>
+                    ) : (
+                        <span className="text-red-600">✗ {health.probe.reason || `HTTP ${health.probe.status_code}`}</span>
+                    )}
+                    {!health.probe.ok && health.probe.response && (
+                        <pre className="mt-2 text-xs bg-muted rounded-md p-3 overflow-x-auto">{JSON.stringify(health.probe.response, null, 2)}</pre>
+                    )}
+                </div>
+            )}
+            {health?.error && <p className="mt-3 text-sm text-destructive">{health.error}</p>}
+
+            <div className="mt-5 border-t border-border/60 pt-4">
+                <label className="text-sm font-medium">Send a test message</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                    <input
+                        type="tel"
+                        value={to}
+                        onChange={(e) => setTo(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="flex-1 min-w-[200px] rounded-md border border-border bg-background px-3 py-2 text-sm"
+                        data-testid="wa-test-number"
+                    />
+                    <Button size="sm" onClick={sendTest} disabled={sending || !to} data-testid="wa-test-btn">
+                        {sending ? "Sending…" : "Send test"}
+                    </Button>
+                </div>
+                {testResult && (
+                    <div className="mt-3 text-sm">
+                        {testResult.error ? (
+                            <p className="text-destructive">{testResult.error}</p>
+                        ) : testResult.ok ? (
+                            <p className="text-emerald-600">✓ Meta accepted the message (HTTP {testResult.status_code}). Check that phone for the message.</p>
+                        ) : (
+                            <>
+                                <p className="text-red-600">✗ {testResult.reason || `Meta rejected it (HTTP ${testResult.status_code})`}</p>
+                                {testResult.response && (
+                                    <pre className="mt-2 text-xs bg-muted rounded-md p-3 overflow-x-auto">{JSON.stringify(testResult.response, null, 2)}</pre>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                    Tip: WhatsApp only allows a free message if that number messaged your business first in the last 24h. If the test fails with a
+                    "re-engagement"/131047 error, open the window by messaging your business number, then retry.
+                </p>
+            </div>
         </section>
     );
 }

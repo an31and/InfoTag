@@ -26,6 +26,7 @@ from models import (
     UpdateUserPayload,
     UserPublic,
 )
+from notifications import phone_last_digits
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -33,10 +34,19 @@ LOCKOUT_THRESHOLD = 5
 LOCKOUT_MINUTES = 15
 
 
+def clean_phone_store(phone: str | None) -> str:
+    """Normalise a phone number for storage: keep a leading '+' and digits only."""
+    return re.sub(r"[^+\d]", "", phone or "")
+
+
+def is_email(value: str) -> bool:
+    return "@" in value
+
+
 def _to_public_user(doc: dict) -> dict:
     return {
         "id": doc["id"],
-        "email": doc["email"],
+        "email": doc.get("email") or None,
         "display_name": doc.get("display_name", ""),
         "phone": doc.get("phone", ""),
         "notify_on_message": doc.get("notify_on_message", True),
@@ -57,34 +67,68 @@ async def _current_user_dep(request: Request) -> dict:
 
 @router.post("/register", response_model=UserPublic)
 async def register(payload: RegisterPayload, response: Response, request: Request) -> dict:
+    """Create an account with a mobile number, an email, or both.
+
+    Phone-first: the mobile number is the primary identity. Email is optional.
+    We store `phone_digits` (the last 10 digits) as the canonical, format-proof
+    login/uniqueness key so "+91 98765 43210" and "9876543210" resolve to the
+    same account.
+    """
     db = get_db()
-    email = payload.email.lower()
-    existing = await db.users.find_one({"email": email}, {"_id": 0})
-    if existing:
+    email = payload.email.lower() if payload.email else ""
+    phone = clean_phone_store(payload.phone)
+    phone_digits = phone_last_digits(phone) if phone else ""
+
+    if phone and len(re.sub(r"\D", "", phone)) < 8:
+        raise HTTPException(status_code=400, detail="Mobile number looks too short")
+    if email and await db.users.find_one({"email": email}, {"_id": 0}):
         raise HTTPException(status_code=400, detail="Email is already registered")
+    if phone_digits and await db.users.find_one({"phone_digits": phone_digits}, {"_id": 0}):
+        raise HTTPException(status_code=400, detail="Mobile number is already registered")
+
+    # A friendly default name: the given name, else the email local-part, else
+    # the last 4 digits of the phone ("User 3210").
+    default_name = payload.display_name or (email.split("@")[0] if email else "") or (
+        f"User {phone_digits[-4:]}" if phone_digits else "User"
+    )
+
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     doc = {
         "id": user_id,
-        "email": email,
+        "email": email or None,
+        "phone": phone,
         "password_hash": hash_password(payload.password),
-        "display_name": payload.display_name or email.split("@")[0],
+        "display_name": default_name,
         "notify_on_message": True,
         "notify_on_scan": False,
         "locale": "en",
         "auth_provider": "password",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    # Only store phone_digits when present — a partial-unique index would treat
+    # multiple empty strings as a collision.
+    if phone_digits:
+        doc["phone_digits"] = phone_digits
     await db.users.insert_one(doc)
-    set_auth_cookies(response, user_id, email)
+    set_auth_cookies(response, user_id, email or user_id)
     return _to_public_user(doc)
 
 
 @router.post("/login", response_model=UserPublic)
 async def login(payload: LoginPayload, response: Response, request: Request) -> dict:
     db = get_db()
-    email = payload.email.lower()
+    who = payload.who.lower()
+
+    # Resolve the identifier to a lookup query: an "@" means email, otherwise
+    # treat it as a mobile number and match on the last-10-digit key.
+    if is_email(who):
+        query = {"email": who}
+    else:
+        digits = phone_last_digits(clean_phone_store(who))
+        query = {"phone_digits": digits} if digits else {"phone_digits": "__none__"}
+
     ip = request.client.host if request.client else "0.0.0.0"
-    identifier = f"{hash_ip(ip)}:{email}"
+    identifier = f"{hash_ip(ip)}:{who}"
 
     # Brute force protection
     attempt_doc = await db.login_attempts.find_one({"identifier": identifier}, {"_id": 0})
@@ -98,7 +142,7 @@ async def login(payload: LoginPayload, response: Response, request: Request) -> 
             if elapsed < LOCKOUT_MINUTES:
                 raise HTTPException(status_code=429, detail="Too many failed attempts. Try again later.")
 
-    user = await db.users.find_one({"email": email}, {"_id": 0})
+    user = await db.users.find_one(query, {"_id": 0})
     if not user or not verify_password(payload.password, user.get("password_hash", "")):
         await db.login_attempts.update_one(
             {"identifier": identifier},
@@ -108,10 +152,10 @@ async def login(payload: LoginPayload, response: Response, request: Request) -> 
             },
             upsert=True,
         )
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid mobile/email or password")
 
     await db.login_attempts.delete_one({"identifier": identifier})
-    set_auth_cookies(response, user["id"], user["email"])
+    set_auth_cookies(response, user["id"], user.get("email") or user["id"])
     return _to_public_user(user)
 
 
@@ -191,14 +235,31 @@ async def google_session(payload: dict, response: Response) -> dict:
 async def update_me(payload: UpdateUserPayload, user: dict = Depends(_current_user_dep)) -> dict:
     db = get_db()
     update = {k: v for k, v in payload.model_dump(exclude_none=True).items()}
+    unset: dict = {}
     if "phone" in update:
         # Keep digits + leading '+' only; an empty string clears the number.
-        cleaned = re.sub(r"[^+\d]", "", update["phone"])
+        cleaned = clean_phone_store(update["phone"])
         if cleaned and len(cleaned.lstrip("+")) < 8:
             raise HTTPException(status_code=400, detail="Phone number looks too short")
         update["phone"] = cleaned
-    if update:
-        await db.users.update_one({"id": user["id"]}, {"$set": update})
+        # Keep the canonical login/uniqueness key in step with the visible number.
+        digits = phone_last_digits(cleaned) if cleaned else ""
+        if digits:
+            clash = await db.users.find_one(
+                {"phone_digits": digits, "id": {"$ne": user["id"]}}, {"_id": 0, "id": 1}
+            )
+            if clash:
+                raise HTTPException(status_code=400, detail="That mobile number is already on another account")
+            update["phone_digits"] = digits
+        else:
+            unset["phone_digits"] = ""
+    if update or unset:
+        ops: dict = {}
+        if update:
+            ops["$set"] = update
+        if unset:
+            ops["$unset"] = unset
+        await db.users.update_one({"id": user["id"]}, ops)
     refreshed = await db.users.find_one({"id": user["id"]}, {"_id": 0})
     return _to_public_user(refreshed)
 

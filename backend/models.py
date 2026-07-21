@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,8 @@ class UserPublic(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
-    email: EmailStr
+    # Email is optional now that owners can sign up with just a mobile number.
+    email: Optional[str] = None
     display_name: str = ""
     phone: str = ""  # E.164-ish; used for alerts + optional direct-contact tags
     notify_on_message: bool = True
@@ -55,14 +56,42 @@ class UserPublic(BaseModel):
 
 
 class RegisterPayload(BaseModel):
-    email: EmailStr
+    """Sign up with a mobile number, an email, or both — at least one is required.
+
+    Phone-first is the primary flow; email is optional. A password is always
+    required (login stays password-based; OTP can be layered on later).
+    """
+    phone: Optional[str] = Field(default=None, max_length=20)
+    email: Optional[EmailStr] = None
     password: str = Field(min_length=8, max_length=128)
     display_name: str = ""
 
+    @model_validator(mode="after")
+    def _need_phone_or_email(self) -> "RegisterPayload":
+        if not (self.phone and self.phone.strip()) and not self.email:
+            raise ValueError("Provide a mobile number or an email address")
+        return self
+
 
 class LoginPayload(BaseModel):
-    email: EmailStr
+    """Log in with either a mobile number or an email (whichever was used).
+
+    `identifier` is the new unified field; `email` is still accepted so older
+    clients keep working.
+    """
+    identifier: Optional[str] = None
+    email: Optional[str] = None
     password: str
+
+    @model_validator(mode="after")
+    def _need_identifier(self) -> "LoginPayload":
+        if not (self.identifier or self.email):
+            raise ValueError("Enter your mobile number or email")
+        return self
+
+    @property
+    def who(self) -> str:
+        return (self.identifier or self.email or "").strip()
 
 
 class UpdateUserPayload(BaseModel):

@@ -149,6 +149,82 @@ def send_whatsapp(to_phone: str, body: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# WhatsApp diagnostics — surface Meta's actual response for the admin portal.
+# send_whatsapp() deliberately swallows errors (it's fire-and-forget in the
+# request path); these helpers instead RETURN what Meta said, so the admin can
+# see the real reason a message didn't go out (expired token, 24h window,
+# test-mode allowlist, wrong number id, …).
+# ---------------------------------------------------------------------------
+def _whatsapp_token() -> str:
+    return os.environ.get("WHATSAPP_TOKEN") or os.environ.get("WHATSAPP_API_KEY") or ""
+
+
+def whatsapp_config_status() -> dict:
+    """Which WhatsApp env vars are present (booleans only — never leak secrets)."""
+    return {
+        "token_set": bool(_whatsapp_token()),
+        "phone_number_id_set": bool(os.environ.get("WHATSAPP_PHONE_NUMBER_ID")),
+        "business_number_set": bool(os.environ.get("WHATSAPP_BUSINESS_NUMBER")),
+        "verify_token_set": bool(os.environ.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN")),
+        "app_secret_set": bool(os.environ.get("META_APP_SECRET")),
+        "enabled": whatsapp_enabled(),
+    }
+
+
+def whatsapp_probe() -> dict:
+    """Live GET against Graph to validate the token + phone-number id pair.
+
+    A 200 means the token is valid and can see the number. A 190 means the
+    token is expired/invalid; a 100/803 usually means a wrong phone-number id.
+    No message is sent.
+    """
+    token, phone_id = _whatsapp_token(), os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
+    if not token or not phone_id:
+        return {"ok": False, "reason": "Token or phone-number id not configured"}
+    try:
+        import requests
+
+        resp = requests.get(
+            f"https://graph.facebook.com/v19.0/{phone_id}",
+            params={"fields": "display_phone_number,verified_name,quality_rating,code_verification_status"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=8,
+        )
+        return {"ok": resp.status_code < 300, "status_code": resp.status_code, "response": _safe_json(resp)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "reason": str(exc)}
+
+
+def whatsapp_send_debug(to_phone: str, body: str) -> dict:
+    """Send a text and RETURN Meta's status + body (unlike send_whatsapp)."""
+    to = _clean_phone(to_phone)
+    token, phone_id = _whatsapp_token(), os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
+    if not to:
+        return {"ok": False, "reason": "Recipient number looks invalid"}
+    if not token or not phone_id:
+        return {"ok": False, "reason": "Token or phone-number id not configured"}
+    try:
+        import requests
+
+        resp = requests.post(
+            f"https://graph.facebook.com/v19.0/{phone_id}/messages",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"messaging_product": "whatsapp", "to": to.lstrip("+"), "type": "text", "text": {"body": body[:1000]}},
+            timeout=8,
+        )
+        return {"ok": resp.status_code < 300, "status_code": resp.status_code, "response": _safe_json(resp)}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "reason": str(exc)}
+
+
+def _safe_json(resp) -> dict:
+    try:
+        return resp.json()
+    except Exception:  # noqa: BLE001
+        return {"raw": (resp.text or "")[:500]}
+
+
+# ---------------------------------------------------------------------------
 # Twilio — SMS + masked-call bridge (paid, env-gated)
 # Env: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
 # ---------------------------------------------------------------------------

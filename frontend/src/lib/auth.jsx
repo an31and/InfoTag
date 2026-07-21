@@ -44,14 +44,22 @@ export function AuthProvider({ children }) {
         checkAuth();
     }, [checkAuth]);
 
-    const login = async (email, password) => {
-        const { data } = await api.post("/auth/login", { email, password });
+    // `identifier` is a mobile number or an email — the backend figures out which.
+    const login = async (identifier, password) => {
+        const { data } = await api.post("/auth/login", { identifier, password });
         setUser(data);
         return data;
     };
 
-    const register = async (email, password, display_name) => {
-        const { data } = await api.post("/auth/register", { email, password, display_name });
+    // Phone-first signup; email is optional. Extra fields are simply omitted
+    // when blank so the backend's "phone or email required" rule applies.
+    const register = async ({ phone, email, password, display_name }) => {
+        const { data } = await api.post("/auth/register", {
+            phone: phone || undefined,
+            email: email || undefined,
+            password,
+            display_name: display_name || undefined,
+        });
         setUser(data);
         return data;
     };

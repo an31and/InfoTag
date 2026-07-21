@@ -31,9 +31,42 @@ async def close_db() -> None:
 
 
 async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
-    await db.users.create_index("email", unique=True)
+    # Email is optional now (phone-first signup), so uniqueness is enforced
+    # only when an email is actually present. An older deployment may have a
+    # plain unique "email_1" index — drop it and recreate as partial.
+    try:
+        await db.users.create_index(
+            "email",
+            unique=True,
+            name="email_unique_when_present",
+            partialFilterExpression={"email": {"$type": "string"}},
+        )
+    except Exception:  # noqa: BLE001 — conflicting older index; replace it
+        try:
+            await db.users.drop_index("email_1")
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            await db.users.create_index(
+                "email",
+                unique=True,
+                name="email_unique_when_present",
+                partialFilterExpression={"email": {"$type": "string"}},
+            )
+        except Exception:  # noqa: BLE001 — never let index setup crash boot
+            pass
     await db.users.create_index("id", unique=True)
     await db.users.create_index("phone")
+    # Canonical mobile-login key: last 10 digits, unique only when present.
+    try:
+        await db.users.create_index(
+            "phone_digits",
+            unique=True,
+            name="phone_digits_unique_when_present",
+            partialFilterExpression={"phone_digits": {"$type": "string"}},
+        )
+    except Exception:  # noqa: BLE001 — pre-existing duplicates shouldn't crash boot
+        pass
     await db.tags.create_index("slug", unique=True)
     await db.tags.create_index("owner_id")
     await db.tags.create_index("id", unique=True)
