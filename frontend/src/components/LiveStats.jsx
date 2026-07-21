@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { PackageCheck, ScanLine, Tag, Users } from "lucide-react";
 
 import api from "../lib/api";
+import { useI18n } from "../lib/i18n";
 
 /**
  * LiveStats — public social-proof counters pulled from /api/public/stats.
  * Renders nothing until data arrives so the hero never jumps.
  */
 export function LiveStats() {
+    const { t } = useI18n();
     const [stats, setStats] = useState(null);
 
     useEffect(() => {
@@ -19,10 +21,10 @@ export function LiveStats() {
     if (!stats) return null;
 
     const items = [
-        { icon: ScanLine, label: "Tag scans", value: stats.scans_total },
-        { icon: PackageCheck, label: "Items recovered", value: stats.items_recovered },
-        { icon: Tag, label: "Active tags", value: stats.tags_active },
-        { icon: Users, label: "Visitors", value: stats.visitors_total },
+        { icon: ScanLine, label: t("stats.scans"), value: stats.scans_total },
+        { icon: PackageCheck, label: t("stats.recovered"), value: stats.items_recovered },
+        { icon: Tag, label: t("stats.active"), value: stats.tags_active },
+        { icon: Users, label: t("stats.visitors"), value: stats.visitors_total },
     ];
 
     return (

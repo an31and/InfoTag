@@ -121,6 +121,49 @@ async def delete_feedback(feedback_id: str, admin: dict = Depends(_require_admin
 
 
 # ---------------------------------------------------------------------------
+# Site settings — landing-page section toggles
+# ---------------------------------------------------------------------------
+# One document in `settings` (id="site"). Every section defaults to ON, so a
+# missing document or a newly added section never blanks the landing page.
+LANDING_SECTIONS: dict[str, str] = {
+    "videos": "10-second video reel",
+    "stats": "Live counters (scans / recovered / visitors)",
+    "how": "How it works",
+    "usecases": "Where to use it",
+    "features": "What you get",
+    "products": "Get tags (sticker cards)",
+    "sponsor": "Sponsor a tag",
+    "faq": "FAQs",
+    "band": "WhatsApp CTA band",
+    "feedback": "Feedback & testimonials",
+}
+
+
+async def get_site_settings(db) -> dict:
+    doc = await db.settings.find_one({"id": "site"}, {"_id": 0}) or {}
+    stored = doc.get("landing_sections", {})
+    return {"landing_sections": {k: bool(stored.get(k, True)) for k in LANDING_SECTIONS}}
+
+
+@router.get("/settings")
+async def read_settings(admin: dict = Depends(_require_admin)) -> dict:
+    settings = await get_site_settings(get_db())
+    settings["section_labels"] = LANDING_SECTIONS
+    return settings
+
+
+@router.patch("/settings")
+async def update_settings(payload: dict, admin: dict = Depends(_require_admin)) -> dict:
+    sections = (payload or {}).get("landing_sections") or {}
+    updates = {f"landing_sections.{k}": bool(v) for k, v in sections.items() if k in LANDING_SECTIONS}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid section flags in payload")
+    db = get_db()
+    await db.settings.update_one({"id": "site"}, {"$set": updates}, upsert=True)
+    return await get_site_settings(db)
+
+
+# ---------------------------------------------------------------------------
 # Sponsor intents (the data was already collected — now it's viewable)
 # ---------------------------------------------------------------------------
 @router.get("/sponsors")

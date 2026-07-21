@@ -5,6 +5,7 @@ import api, { formatApiError } from "../lib/api";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { useI18n } from "../lib/i18n";
 
 /**
  * FeedbackSection — public testimonials + a "share your experience" form.
@@ -14,6 +15,7 @@ import { Textarea } from "./ui/textarea";
  * land in the admin portal's moderation queue.
  */
 export function FeedbackSection() {
+    const { t } = useI18n();
     const [items, setItems] = useState([]);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -34,7 +36,7 @@ export function FeedbackSection() {
         e.preventDefault();
         setError("");
         if (!message.trim()) {
-            setError("Please write a short message.");
+            setError(t("feedback.write_something"));
             return;
         }
         setSending(true);
@@ -65,16 +67,16 @@ export function FeedbackSection() {
                     <div className="flex items-center gap-2">
                         <MessageSquareHeart className="h-5 w-5 text-accent" />
                         <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-                            What people say
+                            {t("feedback.title")}
                         </h2>
                     </div>
                     <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                        Real feedback from owners and kind finders.
+                        {t("feedback.lead")}
                     </p>
                     <div className="mt-6 space-y-4">
                         {items.length === 0 ? (
                             <p className="text-sm text-muted-foreground surface p-5">
-                                Be the first to share your Info-Tag story →
+                                {t("feedback.empty")}
                             </p>
                         ) : (
                             items.slice(0, 6).map((f) => (
@@ -86,7 +88,7 @@ export function FeedbackSection() {
                                     </div>
                                     <p className="text-sm mt-2 leading-relaxed">{f.message}</p>
                                     <footer className="text-xs text-muted-foreground mt-2 font-medium">
-                                        — {f.name || "Anonymous"}
+                                        — {f.name || t("feedback.anonymous")}
                                     </footer>
                                 </blockquote>
                             ))
@@ -96,19 +98,19 @@ export function FeedbackSection() {
 
                 {/* Submission form */}
                 <div className="surface p-6 sm:p-8 h-fit">
-                    <h3 className="font-display font-bold text-lg">Share your feedback</h3>
+                    <h3 className="font-display font-bold text-lg">{t("feedback.form_title")}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Found something? Recovered something? Ideas? We read everything.
+                        {t("feedback.form_lead")}
                     </p>
                     {sent ? (
                         <p className="mt-6 text-sm text-emerald-600 font-medium" data-testid="feedback-sent">
-                            Thank you! Your feedback is in — it may appear here after review.
+                            {t("feedback.sent")}
                         </p>
                     ) : (
                         <form onSubmit={submit} className="mt-5 space-y-3" data-testid="feedback-form">
                             <div className="grid sm:grid-cols-2 gap-3">
                                 <Input
-                                    placeholder="Your name (optional)"
+                                    placeholder={t("feedback.name_ph")}
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     maxLength={120}
@@ -116,7 +118,7 @@ export function FeedbackSection() {
                                 />
                                 <Input
                                     type="email"
-                                    placeholder="Email (optional, never shown)"
+                                    placeholder={t("feedback.email_ph")}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     maxLength={160}
@@ -124,7 +126,7 @@ export function FeedbackSection() {
                                 />
                             </div>
                             <Textarea
-                                placeholder="Your experience, idea, or comment…"
+                                placeholder={t("feedback.message_ph")}
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 maxLength={1000}
@@ -159,7 +161,7 @@ export function FeedbackSection() {
                                     ))}
                                 </div>
                                 <Button type="submit" disabled={sending} className="gap-2" data-testid="feedback-submit">
-                                    <Send className="h-4 w-4" /> {sending ? "Sending…" : "Send"}
+                                    <Send className="h-4 w-4" /> {sending ? t("feedback.sending") : t("feedback.send")}
                                 </Button>
                             </div>
                             {error && <p className="text-sm text-destructive">{error}</p>}
