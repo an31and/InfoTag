@@ -69,6 +69,19 @@ async def record_visit(request: Request) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Public site settings — which landing sections the admin has switched on
+# ---------------------------------------------------------------------------
+@router.get("/site-settings")
+async def public_site_settings() -> dict:
+    from routes.admin_routes import get_site_settings
+
+    try:
+        return await get_site_settings(get_db())
+    except Exception:  # noqa: BLE001 — the landing page must render regardless
+        return {"landing_sections": {}}
+
+
+# ---------------------------------------------------------------------------
 # Public live stats for the landing page ("social proof" counters)
 # ---------------------------------------------------------------------------
 @router.get("/stats")

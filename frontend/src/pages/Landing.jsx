@@ -18,6 +18,7 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { SponsorSection } from "../components/SponsorSection";
 import { UseCaseVideos } from "../components/UseCaseVideos";
 import { ThemeToggle } from "../components/ThemeToggle";
+import api from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 
@@ -51,7 +52,17 @@ export default function LandingPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [demoOpen, setDemoOpen] = useState(false);
+    const [sections, setSections] = useState(null);
     useReveal();
+
+    // Admin-controlled section toggles (Admin portal → Landing sections).
+    // Until the response arrives — or if it fails — every section shows.
+    useEffect(() => {
+        api.get("/public/site-settings")
+            .then(({ data }) => setSections(data?.landing_sections || {}))
+            .catch(() => setSections({}));
+    }, []);
+    const show = (key) => !sections || sections[key] !== false;
 
     const goStart = () => navigate(user ? "/dashboard" : "/signup");
 
@@ -67,12 +78,12 @@ export default function LandingPage() {
                         <span>Info-<span className="text-accent">Tag</span></span>
                     </Link>
                     <ul className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-                        <li><a href="#how" className="hover:text-foreground">{t("landing.nav_how")}</a></li>
-                        <li><a href="#usecases" className="hover:text-foreground">{t("landing.nav_uses")}</a></li>
-                        <li><a href="#features" className="hover:text-foreground">{t("landing.nav_features")}</a></li>
-                        <li><a href="#products" className="hover:text-foreground">{t("landing.nav_tags")}</a></li>
+                        {show("how") && <li><a href="#how" className="hover:text-foreground">{t("landing.nav_how")}</a></li>}
+                        {show("usecases") && <li><a href="#usecases" className="hover:text-foreground">{t("landing.nav_uses")}</a></li>}
+                        {show("features") && <li><a href="#features" className="hover:text-foreground">{t("landing.nav_features")}</a></li>}
+                        {show("products") && <li><a href="#products" className="hover:text-foreground">{t("landing.nav_tags")}</a></li>}
                         <li><Link to="/stories" className="hover:text-foreground" data-testid="nav-stories">{t("landing.nav_stories")}</Link></li>
-                        <li><a href="#faq" className="hover:text-foreground">{t("landing.nav_faq")}</a></li>
+                        {show("faq") && <li><a href="#faq" className="hover:text-foreground">{t("landing.nav_faq")}</a></li>}
                     </ul>
                     <div className="flex items-center gap-1">
                         <LanguageSwitcher compact />
@@ -155,11 +166,12 @@ export default function LandingPage() {
             {demoOpen && <ScanDemo t={t} onClose={() => setDemoOpen(false)} />}
 
             {/* 10-second explainer clips — first thing mobile visitors see after the hero */}
-            <UseCaseVideos />
+            {show("videos") && <UseCaseVideos />}
 
-            <LiveStats />
+            {show("stats") && <LiveStats />}
 
             {/* ---------------- How it works ---------------- */}
+            {show("how") && (
             <section id="how" className="py-16 sm:py-20">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <span className="font-mono text-xs tracking-[0.14em] uppercase text-accent">{t("landing.how_it_works")}</span>
@@ -176,8 +188,10 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ---------------- Use cases (dark band) ---------------- */}
+            {show("usecases") && (
             <section id="usecases" className="py-16 sm:py-20 text-white" style={{ background: INK }}>
                 <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <span className="font-mono text-xs tracking-[0.14em] uppercase text-accent">{t("landing.uses_kicker")}</span>
@@ -185,7 +199,8 @@ export default function LandingPage() {
                         {t("landing.uses_title")} <span className="text-accent">{t("landing.uses_title_hl")}</span>
                     </h2>
                     <p className="mt-3 text-white/65 max-w-xl">{t("landing.uses_lead")}</p>
-                    <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Mobile: one swipeable row (like the video reel) instead of 8 stacked cards */}
+                    <div className="mt-10 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible">
                         {[
                             ["vehicle", "🚗"],
                             ["keys", "🔑"],
@@ -196,7 +211,7 @@ export default function LandingPage() {
                             ["elder", "👴"],
                             ["any", "📦"],
                         ].map(([key, emoji]) => (
-                            <div key={key} className="reveal rounded-2xl border border-white/10 hover:border-accent transition-colors p-5" data-testid={`usecase-${key}`}>
+                            <div key={key} className="reveal shrink-0 w-[72%] snap-center sm:w-auto sm:shrink rounded-2xl border border-white/10 hover:border-accent transition-colors p-5" data-testid={`usecase-${key}`}>
                                 <span className="text-2xl block mb-3" aria-hidden="true">{emoji}</span>
                                 <h3 className="font-display font-bold">{t(`landing.uc_${key}`)}</h3>
                                 <p className="mt-1.5 text-sm text-white/60 leading-relaxed">{t(`landing.uc_${key}_d`)}</p>
@@ -205,20 +220,22 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ---------------- Features ---------------- */}
+            {show("features") && (
             <section id="features" className="py-16 sm:py-20">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <span className="font-mono text-xs tracking-[0.14em] uppercase text-accent">{t("landing.feat_kicker")}</span>
                     <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold tracking-tight">{t("landing.feat_title")}</h2>
                     <p className="mt-3 text-muted-foreground max-w-xl">{t("landing.feat_lead")}</p>
-                    <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="mt-10 flex gap-5 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
                         {[
                             ["f1", "core"], ["f2", "core"], ["f3", "new"],
                             ["f4", "new"], ["f5", "new"], ["f6", "new"],
                             ["f7", "new"], ["f8", "new"], ["f9", "new"],
                         ].map(([key, badge]) => (
-                            <div key={key} className="surface p-6 reveal">
+                            <div key={key} className="surface p-6 reveal shrink-0 w-[78%] snap-center md:w-auto md:shrink">
                                 <span className={`inline-block font-mono text-[10px] tracking-[0.1em] uppercase rounded-full px-3 py-1 mb-3 ${badge === "new" ? "bg-accent text-white" : "bg-primary text-primary-foreground"}`}>
                                     {t(badge === "new" ? "landing.badge_new" : "landing.badge_core")}
                                 </span>
@@ -229,8 +246,10 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ---------------- Get tags (free "products") ---------------- */}
+            {show("products") && (
             <section id="products" className="py-16 sm:py-20 text-white" style={{ background: INK }}>
                 <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <span className="font-mono text-xs tracking-[0.14em] uppercase text-accent">{t("landing.tags_kicker")}</span>
@@ -238,11 +257,11 @@ export default function LandingPage() {
                         {t("landing.tags_title")} <span className="text-accent">{t("landing.tags_title_hl")}</span>
                     </h2>
                     <p className="mt-3 text-white/65 max-w-xl">{t("landing.tags_lead")}</p>
-                    <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="mt-8 flex gap-5 overflow-x-auto snap-x snap-mandatory pt-4 pb-3 -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible">
                         {["p1", "p2", "p3", "p4"].map((key) => (
                             <div
                                 key={key}
-                                className={`relative reveal rounded-2xl bg-white text-slate-900 p-6 flex flex-col ${key === "p1" ? "border-2 border-accent" : "border border-white/10"}`}
+                                className={`relative reveal shrink-0 w-[78%] snap-center sm:w-auto sm:shrink rounded-2xl bg-white text-slate-900 p-6 flex flex-col ${key === "p1" ? "border-2 border-accent" : "border border-white/10"}`}
                                 data-testid={`product-${key}`}
                             >
                                 {key === "p1" && (
@@ -265,10 +284,12 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+            )}
 
-            <SponsorSection />
+            {show("sponsor") && <SponsorSection />}
 
             {/* ---------------- FAQ ---------------- */}
+            {show("faq") && (
             <section id="faq" className="py-16 sm:py-20">
                 <div className="mx-auto max-w-3xl px-4 sm:px-6">
                     <span className="font-mono text-xs tracking-[0.14em] uppercase text-accent">{t("landing.faq_kicker")}</span>
@@ -286,8 +307,10 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+            )}
 
             {/* ---------------- CTA band ---------------- */}
+            {show("band") && (
             <section id="contact" className="pb-16">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6">
                     <div className="reveal rounded-3xl px-6 py-14 sm:px-12 text-center text-white bg-gradient-to-br from-accent to-orange-700">
@@ -305,8 +328,9 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+            )}
 
-            <FeedbackSection />
+            {show("feedback") && <FeedbackSection />}
 
             {/* ---------------- Footer ---------------- */}
             <footer className="text-white/70 pt-14 pb-8" style={{ background: INK }}>
@@ -324,11 +348,11 @@ export default function LandingPage() {
                         <div>
                             <h4 className="font-mono text-[11px] tracking-[0.14em] uppercase text-white/45 mb-3">{t("landing.footer_explore")}</h4>
                             <ul className="space-y-2 text-sm">
-                                <li><a href="#how" className="hover:text-white">{t("landing.nav_how")}</a></li>
-                                <li><a href="#features" className="hover:text-white">{t("landing.nav_features")}</a></li>
-                                <li><a href="#products" className="hover:text-white">{t("landing.nav_tags")}</a></li>
+                                {show("how") && <li><a href="#how" className="hover:text-white">{t("landing.nav_how")}</a></li>}
+                                {show("features") && <li><a href="#features" className="hover:text-white">{t("landing.nav_features")}</a></li>}
+                                {show("products") && <li><a href="#products" className="hover:text-white">{t("landing.nav_tags")}</a></li>}
                                 <li><Link to="/stories" className="hover:text-white" data-testid="footer-stories">{t("landing.nav_stories")}</Link></li>
-                                <li><a href="#faq" className="hover:text-white">{t("landing.nav_faq")}</a></li>
+                                {show("faq") && <li><a href="#faq" className="hover:text-white">{t("landing.nav_faq")}</a></li>}
                                 <li><Link to="/privacy" className="hover:text-white" data-testid="footer-privacy">{t("legal.privacy")}</Link></li>
                                 <li><Link to="/terms" className="hover:text-white" data-testid="footer-terms">{t("legal.terms")}</Link></li>
                                 <li><Link to="/medical-disclaimer" className="hover:text-white" data-testid="footer-medical">{t("legal.medical_disclaimer")}</Link></li>

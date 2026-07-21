@@ -32,7 +32,7 @@ export function SponsorSection() {
         setState("sending");
         try {
             await api.post("/sponsors", form);
-            toast.success("Thank you! We'll be in touch.");
+            toast.success(t("sponsor.thanks"));
             setState("sent");
             setForm({ name: "", email: "", organization: "", tag_count: 50, message: "", bot_check: "" });
             setOpen(false);
@@ -47,39 +47,39 @@ export function SponsorSection() {
             <div className="mx-auto max-w-6xl px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-10 items-start">
                 <div className="lg:col-span-5">
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-card text-xs font-semibold tracking-wider uppercase">
-                        <HandHeart className="h-3.5 w-3.5 text-accent" /> Sponsor a tag
+                        <HandHeart className="h-3.5 w-3.5 text-accent" /> {t("sponsor.kicker")}
                     </span>
                     <h2 className="mt-4 font-display text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-                        Fund printed stickers, free for an Indian family.
+                        {t("sponsor.title")}
                     </h2>
                     <p className="mt-4 text-muted-foreground">
-                        Info-Tag is and will always be free. But weather-proof printed stickers cost money. Sponsor a batch — we'll add a small "Sponsored by you" footer on the PDF and ship them to RTOs, pet shelters, hospitals and senior-citizen groups.
+                        {t("sponsor.body")}
                     </p>
                     {stats && (
                         <div className="mt-6 flex gap-6">
-                            <Stat n={Number(stats.total_pledged || 0).toLocaleString("en-IN")} label="stickers pledged" />
-                            <Stat n={Number(stats.sponsor_count || 0).toLocaleString("en-IN")} label="kind humans" />
+                            <Stat n={Number(stats.total_pledged || 0).toLocaleString("en-IN")} label={t("sponsor.pledged")} />
+                            <Stat n={Number(stats.sponsor_count || 0).toLocaleString("en-IN")} label={t("sponsor.humans")} />
                         </div>
                     )}
                     {!open && (
                         <Button onClick={() => setOpen(true)} className="mt-6 rounded-full gap-2" data-testid="sponsor-open-btn">
-                            <HandHeart className="h-4 w-4" /> I'd like to sponsor
+                            <HandHeart className="h-4 w-4" /> {t("sponsor.open_btn")}
                         </Button>
                     )}
                 </div>
                 {open && (
                     <form onSubmit={submit} className="lg:col-span-7 surface p-6 sm:p-8 space-y-4 animate-rise" data-testid="sponsor-form">
                         <div className="grid sm:grid-cols-2 gap-4">
-                            <Field label="Your name">
+                            <Field label={t("sponsor.name")}>
                                 <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="sponsor-name" />
                             </Field>
-                            <Field label="Email">
+                            <Field label={t("sponsor.email")}>
                                 <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} data-testid="sponsor-email" />
                             </Field>
-                            <Field label="Organization (optional)">
+                            <Field label={t("sponsor.org")}>
                                 <Input value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} data-testid="sponsor-org" />
                             </Field>
-                            <Field label="How many stickers?">
+                            <Field label={t("sponsor.count")}>
                                 <Input
                                     required
                                     type="number"
@@ -91,7 +91,7 @@ export function SponsorSection() {
                                 />
                             </Field>
                         </div>
-                        <Field label="A note for us (optional)">
+                        <Field label={t("sponsor.note")}>
                             <Textarea rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} data-testid="sponsor-message" />
                         </Field>
                         {/* Honeypot */}
@@ -105,10 +105,10 @@ export function SponsorSection() {
                             aria-hidden="true"
                         />
                         <div className="flex items-center gap-3 justify-end">
-                            <Button type="button" variant="ghost" onClick={() => setOpen(false)} data-testid="sponsor-cancel">Cancel</Button>
+                            <Button type="button" variant="ghost" onClick={() => setOpen(false)} data-testid="sponsor-cancel">{t("common.cancel")}</Button>
                             <Button type="submit" disabled={state === "sending"} className="rounded-full gap-2" data-testid="sponsor-submit">
                                 <Send className="h-4 w-4" />
-                                {state === "sending" ? t("common.loading") : "Send pledge"}
+                                {state === "sending" ? t("common.loading") : t("sponsor.send")}
                             </Button>
                         </div>
                     </form>

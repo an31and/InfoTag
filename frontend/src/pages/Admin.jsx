@@ -5,6 +5,7 @@ import {
     Eye,
     EyeOff,
     HandHeart,
+    LayoutList,
     MessageSquareText,
     PackageCheck,
     ScanLine,
@@ -14,10 +15,12 @@ import {
     Trash2,
     Users,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
+import { Switch } from "../components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import api, { formatApiError } from "../lib/api";
 
@@ -139,6 +142,8 @@ export default function AdminPage() {
                 </div>
             )}
 
+            <LandingSectionsPanel />
+
             {/* Scan trend — dependency-free mini bar chart */}
             <section className="surface p-6">
                 <div className="flex items-center gap-2 mb-4">
@@ -241,6 +246,65 @@ export default function AdminPage() {
                 </TabsContent>
             </Tabs>
         </div>
+    );
+}
+
+/**
+ * LandingSectionsPanel — switch any landing-page section on or off.
+ * Saved server-side (settings collection), applied instantly for every
+ * visitor via /api/public/site-settings. Handy when the page feels long:
+ * switch off what you don't need instead of editing code.
+ */
+function LandingSectionsPanel() {
+    const [flags, setFlags] = useState(null);
+    const [labels, setLabels] = useState({});
+
+    useEffect(() => {
+        api.get("/admin/settings")
+            .then(({ data }) => {
+                setFlags(data.landing_sections || {});
+                setLabels(data.section_labels || {});
+            })
+            .catch((e) => toast.error(formatApiError(e)));
+    }, []);
+
+    const toggle = async (key, value) => {
+        const prev = flags;
+        setFlags({ ...flags, [key]: value }); // optimistic — feels instant
+        try {
+            await api.patch("/admin/settings", { landing_sections: { [key]: value } });
+        } catch (e) {
+            setFlags(prev);
+            toast.error(formatApiError(e));
+        }
+    };
+
+    return (
+        <section className="surface p-6" data-testid="landing-sections-panel">
+            <div className="flex items-center gap-2">
+                <LayoutList className="h-4 w-4 text-accent" />
+                <h2 className="font-display font-bold">Landing page sections</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+                Switch off anything you don't want visitors to see — the page updates instantly, no deploy needed.
+            </p>
+            {flags === null ? (
+                <Skeleton className="h-24 rounded-xl mt-4" />
+            ) : (
+                <div className="mt-4 grid sm:grid-cols-2 gap-x-8 gap-y-1">
+                    {Object.entries(labels).map(([key, label]) => (
+                        <label
+                            key={key}
+                            className="flex items-center justify-between gap-3 py-2 border-b border-border/60 last:border-0 sm:[&:nth-last-child(2)]:border-0 cursor-pointer"
+                            data-testid={`section-toggle-${key}`}
+                        >
+                            <span className={`text-sm ${flags[key] ? "" : "text-muted-foreground line-through"}`}>{label}</span>
+                            <Switch checked={!!flags[key]} onCheckedChange={(v) => toggle(key, v)} />
+                        </label>
+                    ))}
+                </div>
+            )}
+        </section>
     );
 }
 
