@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from auth import get_current_user
 from db import get_db
+from notifications import whatsapp_config_status, whatsapp_probe, whatsapp_send_debug
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -161,6 +162,29 @@ async def update_settings(payload: dict, admin: dict = Depends(_require_admin)) 
     db = get_db()
     await db.settings.update_one({"id": "site"}, {"$set": updates}, upsert=True)
     return await get_site_settings(db)
+
+
+# ---------------------------------------------------------------------------
+# WhatsApp diagnostics — see WHY messages aren't going out
+# ---------------------------------------------------------------------------
+@router.get("/whatsapp/health")
+async def whatsapp_health(admin: dict = Depends(_require_admin)) -> dict:
+    """Config presence + a live token/number check against Meta (no send)."""
+    return {"config": whatsapp_config_status(), "probe": whatsapp_probe()}
+
+
+@router.post("/whatsapp/test")
+async def whatsapp_test(payload: dict, admin: dict = Depends(_require_admin)) -> dict:
+    """Send a real test message and return Meta's exact response.
+
+    Meta's response is the diagnostic: e.g. code 131047 = the recipient hasn't
+    messaged you in the last 24h (open the window first), 190 = expired token,
+    131030 = recipient not in the test-mode allowlist.
+    """
+    to = (payload or {}).get("to", "")
+    if not to:
+        raise HTTPException(status_code=400, detail='Provide a recipient number, e.g. {"to": "+919876543210"}')
+    return whatsapp_send_debug(to, "✅ Info-Tag test — if you got this, WhatsApp alerts are working!")
 
 
 # ---------------------------------------------------------------------------
