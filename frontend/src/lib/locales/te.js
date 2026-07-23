@@ -19,7 +19,7 @@ export default {
         delete: "తొలగించు",
         edit: "సవరించు",
         new_tag: "కొత్త ట్యాగ్",
-        made_in_india: "మేడ్ ఇన్ ఇండియా",
+        made_in_india: "❤️ తో భారతదేశంలో తయారు (పన్నా, మధ్యప్రదేశ్)",
         free_public_service: "ఒక ఉచిత ప్రజాసేవా వ్యవస్థ",
         loading: "లోడ్ అవుతోంది…",
         verify_before_acting: "చర్య తీసుకునే ముందు ఈ సమాచారాన్ని ధృవీకరించండి.",
@@ -196,6 +196,8 @@ export default {
         video_overview: "Info-Tag అంటే ఏమిటి?",
         video_how: "స్కాన్ ఎలా పనిచేస్తుంది",
         video_uses: "ఎక్కడెక్కడ వాడవచ్చు",
+        video_school: "పిల్లల లంచ్‌బాక్స్‌లు & స్కూల్ సామాను",
+        video_bags: "బ్యాగులు, బ్యాక్‌ప్యాక్‌లు & లగేజ్",
         videos_hint: "స్వైప్ చేయండి →",
     },
     stories: {

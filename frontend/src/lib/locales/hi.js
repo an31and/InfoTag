@@ -19,7 +19,7 @@ export default {
         delete: "हटाएँ",
         edit: "एडिट",
         new_tag: "नया टैग",
-        made_in_india: "मेड इन इंडिया",
+        made_in_india: "❤️ से बना, इंडिया में (पन्ना, मध्य प्रदेश)",
         free_public_service: "एक मुफ़्त जन-सेवा इकोसिस्टम",
         loading: "लोड हो रहा है…",
         verify_before_acting: "कार्य करने से पहले कृपया इस जानकारी की पुष्टि करें।",
@@ -216,6 +216,8 @@ export default {
         video_overview: "Info-Tag क्या है?",
         video_how: "स्कैन कैसे काम करता है",
         video_uses: "कहाँ-कहाँ इस्तेमाल करें",
+        video_school: "बच्चों के लंचबॉक्स और स्कूल का सामान",
+        video_bags: "बैग, बैकपैक और सामान",
         videos_hint: "स्वाइप करें →",
     },
     stories: {

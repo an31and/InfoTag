@@ -7,7 +7,7 @@ function LegalLayout({ title, children }) {
             <header className="border-b">
                 <div className="mx-auto max-w-3xl px-4 sm:px-8 h-14 flex items-center justify-between">
                     <Link to="/" className="font-display font-black inline-flex items-center gap-2" data-testid="legal-brand">
-                        <Tag className="h-4 w-4 text-accent" /> Info-<span className="text-accent">Tag</span>
+                        <Tag className="h-4 w-4 text-accent" /> <span>Info-<span className="text-accent">Tag</span></span>
                     </Link>
                     <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
                         <ArrowLeft className="h-4 w-4" /> Home

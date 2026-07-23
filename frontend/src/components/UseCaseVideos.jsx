@@ -10,18 +10,37 @@ import { useI18n } from "../lib/i18n";
  * swiping (no library); an IntersectionObserver plays only the slide in
  * view so several videos never download/decode at once on slow connections.
  *
- * Autoplay must start muted (every mobile browser enforces this), so each
- * MP4 slide gets a speaker button — one tap turns the sound on. YouTube
- * entries render as a thumbnail that swaps to the real player on tap.
- * The list of videos lives in src/constants/videos.js.
+ * Sound follows the slide on screen: as soon as a clip scrolls into view it
+ * tries to play *with audio*, and it re-mutes the moment it leaves — so a
+ * visitor hears only the video they're looking at. Browsers that still block
+ * unmuted autoplay fall back to muted playback (the speaker button then turns
+ * sound on with one tap). The speaker button also lets a visitor silence the
+ * reel entirely; that choice sticks as they keep scrolling. YouTube entries
+ * render as a thumbnail that swaps to the real player on tap. The list of
+ * videos lives in src/constants/videos.js.
  */
 export function UseCaseVideos() {
     const { t } = useI18n();
     const trackRef = useRef(null);
     const [active, setActive] = useState(0);
-    const [soundOn, setSoundOn] = useState(null); // index of the (single) unmuted slide
+    const [audioOn, setAudioOn] = useState(true); // sound follows the on-screen slide until muted
+    const audioOnRef = useRef(true);
+    audioOnRef.current = audioOn;
 
     const caption = (v) => (v.key ? t(`landing.${v.key}`) : v.title || "");
+
+    // Play the on-screen slide with sound (falling back to muted if the browser
+    // blocks unmuted autoplay); pause + mute every slide that scrolls away.
+    const playWithSound = (video) => {
+        const wantSound = audioOnRef.current;
+        video.muted = !wantSound;
+        video.play().catch(() => {
+            if (wantSound) {
+                video.muted = true;
+                video.play().catch(() => {});
+            }
+        });
+    };
 
     useEffect(() => {
         const track = trackRef.current;
@@ -36,14 +55,15 @@ export function UseCaseVideos() {
                 entries.forEach((entry) => {
                     const idx = Number(entry.target.dataset.slide);
                     const video = entry.target.querySelector("video");
+                    if (!video) return;
                     if (entry.isIntersecting && entry.intersectionRatio > 0.55) {
                         setActive(idx);
-                        video?.play().catch(() => {});
+                        playWithSound(video);
                     } else {
-                        video?.pause();
-                        // Swiping away from an unmuted clip re-mutes it, so audio
-                        // never plays from an off-screen slide.
-                        setSoundOn((cur) => (cur === idx ? null : cur));
+                        video.pause();
+                        // Leaving a slide always re-mutes it, so audio never
+                        // plays from a clip that's off screen.
+                        video.muted = true;
                     }
                 });
             },
@@ -53,14 +73,17 @@ export function UseCaseVideos() {
         return () => io.disconnect();
     }, []);
 
-    const toggleSound = (i) => {
-        const next = soundOn === i ? null : i;
-        setSoundOn(next);
+    const toggleSound = () => {
+        const next = !audioOn;
+        setAudioOn(next);
+        audioOnRef.current = next;
+        // Apply immediately to the slide currently on screen.
         const track = trackRef.current;
-        track?.querySelectorAll("[data-slide]").forEach((slide) => {
-            const video = slide.querySelector("video");
-            if (video) video.muted = Number(slide.dataset.slide) !== next;
-        });
+        const video = track?.querySelector(`[data-slide="${active}"] video`);
+        if (video) {
+            video.muted = !next;
+            if (next) video.play().catch(() => {});
+        }
     };
 
     const scrollTo = (i) => {
@@ -111,12 +134,12 @@ export function UseCaseVideos() {
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => toggleSound(i)}
-                                        aria-label={soundOn === i ? "Mute" : "Unmute"}
+                                        onClick={toggleSound}
+                                        aria-label={audioOn ? "Mute" : "Unmute"}
                                         className="absolute bottom-3 right-3 w-10 h-10 rounded-full grid place-items-center bg-black/60 backdrop-blur border border-white/25 text-white active:scale-95 transition-transform"
                                         data-testid={`usecase-video-sound-${i}`}
                                     >
-                                        {soundOn === i ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                                        {audioOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                                     </button>
                                 </>
                             )}

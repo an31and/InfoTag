@@ -72,8 +72,8 @@ export default function LandingPage() {
             <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/85 border-b">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
                     <Link to="/" className="flex items-center gap-2 font-display font-black text-xl tracking-tight" data-testid="landing-brand">
-                        <span className="w-7 h-7 rounded-lg bg-primary text-primary-foreground grid place-items-center">
-                            <Tag className="h-4 w-4" strokeWidth={2.5} />
+                        <span className="w-[35px] h-[35px] rounded-lg bg-primary text-primary-foreground grid place-items-center">
+                            <Tag className="h-5 w-5" strokeWidth={2.5} />
                         </span>
                         <span>Info-<span className="text-accent">Tag</span></span>
                     </Link>
@@ -338,10 +338,10 @@ export default function LandingPage() {
                     <div className="grid sm:grid-cols-3 gap-10 pb-9 border-b border-white/10">
                         <div>
                             <div className="flex items-center gap-2 font-display font-black text-xl text-white">
-                                <span className="w-7 h-7 rounded-lg bg-accent grid place-items-center">
-                                    <Tag className="h-4 w-4 text-white" strokeWidth={2.5} />
+                                <span className="w-[35px] h-[35px] rounded-lg bg-accent grid place-items-center">
+                                    <Tag className="h-5 w-5 text-white" strokeWidth={2.5} />
                                 </span>
-                                Info-<span className="text-accent">Tag</span>
+                                <span>Info-<span className="text-accent">Tag</span></span>
                             </div>
                             <p className="mt-3 text-sm max-w-xs">{t("landing.footer_tagline")}</p>
                         </div>
@@ -394,7 +394,7 @@ export default function LandingPage() {
                     </div>
                     <div className="pt-6 flex flex-wrap justify-between gap-2 font-mono text-[11px] text-white/40">
                         <span>© 2026 Info-Tag · MIT open source</span>
-                        <span>MADE IN INDIA 🇮🇳 · PRIVACY-FIRST BY DESIGN</span>
+                        <span>MADE WITH ❤️ IN INDIA (PANNA, MADHYA PRADESH) 🇮🇳 · PRIVACY-FIRST BY DESIGN</span>
                     </div>
                 </div>
             </footer>

@@ -23,4 +23,6 @@ export const VIDEOS = [
     { src: "/videos/overview.mp4", key: "video_overview", portrait: true },
     { src: "/videos/how-it-works.mp4", key: "video_how", portrait: false },
     { src: "/videos/use-cases.mp4", key: "video_uses", portrait: false },
+    { src: "/videos/school-gear.mp4", key: "video_school", portrait: false },
+    { src: "/videos/bags.mp4", key: "video_bags", portrait: false },
 ];
