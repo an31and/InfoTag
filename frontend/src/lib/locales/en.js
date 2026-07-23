@@ -19,7 +19,7 @@ export default {
         delete: "Delete",
         edit: "Edit",
         new_tag: "Create tag",
-        made_in_india: "Made in India",
+        made_in_india: "Made with ❤️ in India (Panna, Madhya Pradesh)",
         free_public_service: "A free public-service ecosystem",
         loading: "Loading…",
         verify_before_acting: "Please verify before acting on this information.",
@@ -216,6 +216,8 @@ export default {
         video_overview: "What is Info-Tag?",
         video_how: "How a scan works",
         video_uses: "Where you can use it",
+        video_school: "Kids' lunchboxes & school gear",
+        video_bags: "Bags, backpacks & luggage",
         videos_hint: "Swipe →",
     },
     stories: {

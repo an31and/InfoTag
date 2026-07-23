@@ -19,7 +19,7 @@ export default {
         delete: "মুছুন",
         edit: "সম্পাদনা",
         new_tag: "নতুন ট্যাগ",
-        made_in_india: "মেড ইন ইন্ডিয়া",
+        made_in_india: "❤️ দিয়ে তৈরি, ভারতে (পান্না, মধ্যপ্রদেশ)",
         free_public_service: "একটি বিনামূল্যের জনসেবা ব্যবস্থা",
         loading: "লোড হচ্ছে…",
         verify_before_acting: "কোনো পদক্ষেপ নেওয়ার আগে এই তথ্য যাচাই করুন।",
@@ -196,6 +196,8 @@ export default {
         video_overview: "Info-Tag কী?",
         video_how: "স্ক্যান কীভাবে কাজ করে",
         video_uses: "কোথায় কোথায় ব্যবহার করবেন",
+        video_school: "বাচ্চাদের টিফিন বক্স ও স্কুলের জিনিস",
+        video_bags: "ব্যাগ, ব্যাকপ্যাক ও লাগেজ",
         videos_hint: "সোয়াইপ করুন →",
     },
     stories: {
