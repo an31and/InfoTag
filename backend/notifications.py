@@ -117,12 +117,29 @@ def whatsapp_business_number() -> str:
     return _clean_phone(os.environ.get("WHATSAPP_BUSINESS_NUMBER", ""))
 
 
-def send_whatsapp(to_phone: str, body: str) -> bool:
-    """Send a WhatsApp text via the Meta Cloud API.  Best-effort, env-gated."""
-    to_phone = _clean_phone(to_phone)
-    if not to_phone or not whatsapp_enabled():
-        logger.info("WhatsApp skipped (not configured or no phone) to=%s", to_phone)
-        return False
+def whatsapp_alert_template() -> tuple[str, str] | None:
+    """(template_name, language_code) for business-initiated alerts, or None.
+
+    WhatsApp only lets you send free-form text inside a 24-hour "customer
+    service window" that opens when the user messages the business first.
+    Finder alerts are business-initiated and usually land OUTSIDE that window,
+    where Meta requires a pre-approved *template* message — this is why alerts
+    silently fail on a fresh number or a test/sandbox account.
+
+    Set WHATSAPP_ALERT_TEMPLATE to the approved template's name to send alerts
+    that work outside the window. The template must have exactly one body
+    parameter ({{1}}) — we fill it with a one-line summary of the alert.
+    WHATSAPP_ALERT_TEMPLATE_LANG sets its language code (default "en").
+    """
+    name = os.environ.get("WHATSAPP_ALERT_TEMPLATE", "").strip()
+    if not name:
+        return None
+    lang = os.environ.get("WHATSAPP_ALERT_TEMPLATE_LANG", "en").strip() or "en"
+    return name, lang
+
+
+def _whatsapp_post(payload: dict) -> bool:
+    """POST a message payload to the Cloud API. Best-effort; logs Meta errors."""
     token = os.environ.get("WHATSAPP_TOKEN") or os.environ.get("WHATSAPP_API_KEY")
     phone_id = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
     try:
@@ -131,21 +148,62 @@ def send_whatsapp(to_phone: str, body: str) -> bool:
         resp = requests.post(
             f"https://graph.facebook.com/v19.0/{phone_id}/messages",
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            json={
-                "messaging_product": "whatsapp",
-                "to": to_phone.lstrip("+"),
-                "type": "text",
-                "text": {"body": body[:4000]},
-            },
+            json=payload,
             timeout=8,
         )
         if resp.status_code >= 300:
-            logger.warning("WhatsApp send failed: %s %s", resp.status_code, resp.text[:300])
+            logger.warning("WhatsApp send failed (%s): %s", payload.get("type"), resp.text[:300])
             return False
         return True
     except Exception as exc:  # noqa: BLE001
-        logger.warning("WhatsApp send failed: %s", exc)
+        logger.warning("WhatsApp send failed (%s): %s", payload.get("type"), exc)
         return False
+
+
+def send_whatsapp(to_phone: str, body: str) -> bool:
+    """Send a WhatsApp alert via the Meta Cloud API.  Best-effort, env-gated.
+
+    When WHATSAPP_ALERT_TEMPLATE is configured the alert goes out as an
+    approved template message, which Meta delivers even outside the 24-hour
+    customer-service window (the reliable path for a fresh/test number). If
+    the template send fails — or no template is configured — it falls back to
+    a free-form text message, which only lands inside an open window.
+    """
+    to_phone = _clean_phone(to_phone)
+    if not to_phone or not whatsapp_enabled():
+        logger.info("WhatsApp skipped (not configured or no phone) to=%s", to_phone)
+        return False
+    to = to_phone.lstrip("+")
+
+    tmpl = whatsapp_alert_template()
+    if tmpl:
+        name, lang = tmpl
+        # Template body parameters can't contain newlines/tabs or long runs of
+        # whitespace, so collapse the multi-line alert into one clean line.
+        param = re.sub(r"\s+", " ", body or "").strip()[:1000] or "You have a new Info-Tag alert."
+        if _whatsapp_post(
+            {
+                "messaging_product": "whatsapp",
+                "to": to,
+                "type": "template",
+                "template": {
+                    "name": name,
+                    "language": {"code": lang},
+                    "components": [{"type": "body", "parameters": [{"type": "text", "text": param}]}],
+                },
+            }
+        ):
+            return True
+        logger.info("WhatsApp template send failed; trying free-form text to=%s", to_phone)
+
+    return _whatsapp_post(
+        {
+            "messaging_product": "whatsapp",
+            "to": to,
+            "type": "text",
+            "text": {"body": body[:4000]},
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
