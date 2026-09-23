@@ -256,6 +256,7 @@ export default {
         password: "கடவுச்சொல்",
         display_name: "உங்கள் பெயர்",
         continue_with_google: "Google மூலம் தொடரவும்",
+        google_failed: "Google உள்நுழைவு முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
         or_use_email: "அல்லது மின்னஞ்சலைப் பயன்படுத்துங்கள்",
         already_have_account: "ஏற்கனவே கணக்கு உள்ளதா?",
         need_account: "கணக்கு இல்லையா?",

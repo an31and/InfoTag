@@ -1,9 +1,9 @@
 import "@/App.css";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { useEffect } from "react";
 
-import { AuthCallback, AuthProvider, ProtectedRoute, useAuth } from "@/lib/auth";
+import { AuthProvider, ProtectedRoute, useAuth } from "@/lib/auth";
 import api from "@/lib/api";
 import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
@@ -26,25 +26,13 @@ import { FinderRedirect } from "@/pages/FinderRedirect";
 import ClaimPage from "@/pages/Claim";
 import { MedicalDisclaimerPage, PrivacyPage, TermsPage } from "@/pages/Legal";
 
-/**
- * AppRouter — handle the Emergent Google `session_id` fragment FIRST, before
- * any other route renders.
- *
- * REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS,
- * THIS BREAKS THE AUTH.
- */
 function AppRouter() {
-    const location = useLocation();
-    if (typeof window !== "undefined" && window.location.hash?.includes("session_id=")) {
-        return <AuthCallback />;
-    }
     return (
         <Routes>
             {/* Public */}
             <Route path="/" element={<HomeOrDashboard />} />
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/signup" element={<AuthPage mode="signup" />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
 
             <Route path="/tag/:slug" element={<FinderRedirect />} />
             <Route path="/claim/:slug" element={<ClaimPage />} />

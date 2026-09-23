@@ -259,6 +259,7 @@ export default {
         password: "पासवर्ड",
         display_name: "तुमचे नाव",
         continue_with_google: "Google ने सुरू ठेवा",
+        google_failed: "Google साइन-इन पूर्ण झाले नाही. कृपया पुन्हा प्रयत्न करा.",
         or_use_email: "किंवा ईमेल वापरा",
         already_have_account: "आधीच खाते आहे?",
         need_account: "खाते नाही?",

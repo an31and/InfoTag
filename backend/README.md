@@ -32,7 +32,7 @@ backend/
 ├── notifications.py       email (SMTP / SendGrid) — env-gated
 ├── models.py              Pydantic models + types
 ├── routes/
-│   ├── auth_routes.py     register / login / google session / me / export / delete
+│   ├── auth_routes.py     register / login / google oauth / me / export / delete
 │   ├── tag_routes.py      CRUD + public finder lookup + QR PNG + claim
 │   ├── profile_routes.py  medical/emergency profile
 │   ├── message_routes.py  finder → owner messages + inbox

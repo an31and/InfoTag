@@ -4,10 +4,10 @@ Supports two authentication providers that converge on the same user record
 and the same JWT cookie session:
 
 * Password auth (email + password, bcrypt hash stored in `password_hash`).
-* Emergent Google auth — frontend redirects to ``auth.emergentagent.com`` and
-  comes back with a ``session_id`` in the URL fragment.  The backend
-  exchanges that for the Google profile, finds or creates a user, and then
-  issues the same JWT cookies as the password flow.
+* Sign in with Google — standard OAuth 2.0 code flow handled entirely by the
+  backend (``/api/auth/google/login`` → Google → ``/api/auth/google/callback``).
+  The callback finds or creates the user and issues the same JWT cookies as
+  the password flow.
 """
 from __future__ import annotations
 

@@ -276,6 +276,7 @@ export default {
         password: "Password",
         display_name: "Your name",
         continue_with_google: "Continue with Google",
+        google_failed: "Google sign-in didn't complete. Please try again.",
         or_use_email: "or use email",
         already_have_account: "Already have an account?",
         need_account: "Don't have an account?",

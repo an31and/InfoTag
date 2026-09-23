@@ -3,7 +3,7 @@
 Two auth paths converge on the same JWT cookie session:
 
 1. Password auth — `/api/auth/register`, `/api/auth/login`
-2. Emergent Google auth — frontend redirects to `auth.emergentagent.com`, lands on `/auth/callback#session_id=...`, calls `POST /api/auth/google/session` with `{ session_id }` to issue cookies.
+2. Sign in with Google — button hits `GET /api/auth/google/login`, which redirects to Google; Google returns to `GET /api/auth/google/callback`, which sets the cookies and redirects to `/dashboard`.
 
 ## Step 1 — MongoDB sanity
 ```
@@ -39,11 +39,12 @@ curl -b /tmp/c.txt "$API/api/inbox"          # should now contain the finder mes
 ## Step 4 — Medical emergency view
 Look up the seeded medical tag (`type:"medical"`) and ensure the public response includes the `emergency` block with `blood_group:"O+"`, `emergency_contact_phone:"+91 89042 23100"` and a `last_updated` timestamp.
 
-## Step 5 — Google session (Emergent Auth)
-1. Open `<frontend>/login` and click "Continue with Google".
-2. After Google completes, the URL becomes `<frontend>/auth/callback#session_id=...`.
-3. AuthCallback POSTs `{ session_id }` to `/api/auth/google/session` and gets cookies back.
-4. Verify a fresh user is created (or merged on email match) and `/api/auth/me` returns the same user.
+## Step 5 — Sign in with Google
+Requires `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `backend/.env` and `<backend>/api/auth/google/callback` listed as an Authorized redirect URI in Google Cloud Console.
+1. Open `<frontend>/login` and click "Continue with Google" — Google's own account chooser opens, showing your app name (not a third-party domain).
+2. After choosing an account you land on `<frontend>/dashboard`, signed in.
+3. Verify a fresh user is created (or merged on verified-email match) and `/api/auth/me` returns the same user.
+4. A failed/cancelled sign-in returns to `<frontend>/login?error=google` with a friendly message.
 
 ## Failure indicators
 - 401 on `/api/auth/me` after login → cookie `samesite=None; secure=True` likely lost; verify HTTPS + CORS allow_credentials.

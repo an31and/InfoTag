@@ -13,9 +13,6 @@ import { useI18n } from "../lib/i18n";
 /**
  * Two-pane auth screen (visual + form).  All form / Google logic lives in
  * `<EmailPasswordForm>` and `<GoogleAuthButton>` inside `AuthParts.jsx`.
- *
- * REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS,
- * THIS BREAKS THE AUTH.
  */
 export default function AuthPage({ mode = "login" }) {
     const isSignup = mode === "signup";
@@ -28,7 +25,10 @@ export default function AuthPage({ mode = "login" }) {
     const [password, setPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState("");
+    // The Google callback bounces back here with ?error=… if sign-in failed.
+    const [error, setError] = useState(() =>
+        new URLSearchParams(location.search).get("error") ? t("auth.google_failed") : ""
+    );
 
     const onSubmit = async (e) => {
         e.preventDefault();

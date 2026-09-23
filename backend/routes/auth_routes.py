@@ -1,14 +1,18 @@
-"""Auth endpoints — email/password + Emergent Google session exchange."""
+"""Auth endpoints — email/password + Sign in with Google (OAuth 2.0)."""
 from __future__ import annotations
 
+import logging
 import os
 import re
+import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
 
 from auth import (
     clear_auth_cookies,
@@ -28,6 +32,7 @@ from models import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 LOCKOUT_THRESHOLD = 5
 LOCKOUT_MINUTES = 15
@@ -126,41 +131,37 @@ async def me(user: dict = Depends(_current_user_dep)) -> dict:
     return _to_public_user(user)
 
 
-@router.post("/google/session")
-async def google_session(payload: dict, response: Response) -> dict:
-    """Exchange Emergent Google session_id for a Info-Tag JWT cookie session.
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
+GOOGLE_STATE_COOKIE = "g_oauth_state"
 
-    REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS,
-    THIS BREAKS THE AUTH.  The frontend passes us the session_id from the URL
-    fragment after Google sign-in; we exchange it server-side for the user's
-    Google profile, then upsert the user and issue our own auth cookies.
-    """
-    session_id = (payload or {}).get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="session_id is required")
-    try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            resp = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": session_id},
-            )
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=f"Emergent auth unreachable: {exc}")
-    if resp.status_code != 200:
-        raise HTTPException(status_code=401, detail="Invalid Google session")
-    data = resp.json()
-    email = (data.get("email") or "").lower()
-    name = data.get("name") or ""
-    picture = data.get("picture") or ""
-    if not email:
-        raise HTTPException(status_code=400, detail="Google profile missing email")
 
+def google_enabled() -> bool:
+    return bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
+
+
+def _google_redirect_uri(request: Request) -> str:
+    """Must exactly match an "Authorized redirect URI" in Google Cloud Console."""
+    explicit = os.environ.get("GOOGLE_REDIRECT_URI", "").strip()
+    if explicit:
+        return explicit
+    proto = (request.headers.get("x-forwarded-proto") or request.url.scheme).split(",")[0].strip()
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc).split(",")[0].strip()
+    return f"{proto}://{host}/api/auth/google/callback"
+
+
+def _frontend_url(path: str) -> str:
+    base = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    return f"{base}{path}"
+
+
+async def _upsert_google_user(email: str, name: str, picture: str) -> dict:
     db = get_db()
     user = await db.users.find_one({"email": email}, {"_id": 0})
     if user is None:
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
         user = {
-            "id": user_id,
+            "id": f"user_{uuid.uuid4().hex[:12]}",
             "email": email,
             "password_hash": "",  # Google-only — no password
             "display_name": name or email.split("@")[0],
@@ -172,19 +173,86 @@ async def google_session(payload: dict, response: Response) -> dict:
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         await db.users.insert_one(user)
-    else:
-        # Merge — flag that they can use either method, refresh picture
-        provider = user.get("auth_provider", "password")
-        new_provider = "both" if provider != "google" else "google"
-        await db.users.update_one(
-            {"email": email},
-            {"$set": {"auth_provider": new_provider, "picture": picture, "display_name": user.get("display_name") or name}},
-        )
-        user["auth_provider"] = new_provider
-        user["picture"] = picture
+        return user
+    # Merge — flag that they can use either method, refresh picture
+    provider = user.get("auth_provider", "password")
+    new_provider = "both" if provider != "google" else "google"
+    await db.users.update_one(
+        {"email": email},
+        {"$set": {"auth_provider": new_provider, "picture": picture, "display_name": user.get("display_name") or name}},
+    )
+    user["auth_provider"] = new_provider
+    user["picture"] = picture
+    return user
 
-    set_auth_cookies(response, user["id"], user["email"])
-    return _to_public_user(user)
+
+@router.get("/google/login")
+async def google_login(request: Request) -> RedirectResponse:
+    """Send the browser straight to Google's own consent screen."""
+    if not google_enabled():
+        return RedirectResponse(_frontend_url("/login?error=google_unavailable"), status_code=302)
+    state = secrets.token_urlsafe(24)
+    params = {
+        "client_id": os.environ["GOOGLE_CLIENT_ID"],
+        "redirect_uri": _google_redirect_uri(request),
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "prompt": "select_account",
+    }
+    resp = RedirectResponse(f"{GOOGLE_AUTH_URL}?{urlencode(params)}", status_code=302)
+    # Lax so the cookie survives the top-level redirect back from Google.
+    resp.set_cookie(
+        GOOGLE_STATE_COOKIE, state, max_age=600, httponly=True, secure=True, samesite="lax", path="/api/auth/google"
+    )
+    return resp
+
+
+@router.get("/google/callback")
+async def google_callback(
+    request: Request, code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None
+) -> RedirectResponse:
+    """Exchange Google's authorization code, sign the user in, go to the dashboard."""
+    fail = RedirectResponse(_frontend_url("/login?error=google"), status_code=302)
+    fail.delete_cookie(GOOGLE_STATE_COOKIE, path="/api/auth/google")
+    expected_state = request.cookies.get(GOOGLE_STATE_COOKIE)
+    if error or not code or not state or not expected_state or not secrets.compare_digest(state, expected_state):
+        return fail
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            token_resp = await client.post(
+                GOOGLE_TOKEN_URL,
+                data={
+                    "code": code,
+                    "client_id": os.environ["GOOGLE_CLIENT_ID"],
+                    "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
+                    "redirect_uri": _google_redirect_uri(request),
+                    "grant_type": "authorization_code",
+                },
+            )
+            if token_resp.status_code != 200:
+                logger.warning("Google token exchange failed: %s", token_resp.text[:200])
+                return fail
+            info_resp = await client.get(
+                GOOGLE_USERINFO_URL,
+                headers={"Authorization": f"Bearer {token_resp.json()['access_token']}"},
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Google sign-in unreachable: %s", exc)
+        return fail
+    if info_resp.status_code != 200:
+        return fail
+    data = info_resp.json()
+    email = (data.get("email") or "").lower()
+    # Only trust verified emails — otherwise anyone could claim an existing account.
+    if not email or not data.get("email_verified"):
+        return fail
+
+    user = await _upsert_google_user(email, data.get("name") or "", data.get("picture") or "")
+    resp = RedirectResponse(_frontend_url("/dashboard"), status_code=302)
+    resp.delete_cookie(GOOGLE_STATE_COOKIE, path="/api/auth/google")
+    set_auth_cookies(resp, user["id"], user["email"])
+    return resp
 
 
 @router.patch("/me", response_model=UserPublic)

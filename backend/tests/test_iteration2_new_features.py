@@ -2,7 +2,6 @@
 InfoTag — Iteration-2 new-features tests.
 
 Covers ONLY what changed in this iteration (per review request):
-  - Async google session (httpx, non-blocking)
   - Scan dedupe within 30s
   - Lifespan migration (sanity via /api/health)
   - DELETE /api/auth/me requires current_password (password user)
@@ -156,39 +155,6 @@ class TestRightToBeForgotten:
         # Subsequent /me must be 401
         r2 = s.get(f"{BASE_URL}/api/auth/me")
         assert r2.status_code == 401
-
-
-# ---------- Async google session (non-blocking) ----------
-class TestGoogleSessionAsync:
-    def test_invalid_session_returns_401(self):
-        r = requests.post(f"{BASE_URL}/api/auth/google/session", json={"session_id": "xyz"})
-        assert r.status_code in (401, 502), r.text  # 502 if Emergent unreachable; 401 if rejected
-
-    def test_google_session_does_not_block_event_loop(self):
-        """Fire a google/session POST concurrently with /api/health.
-
-        If the route blocks the event loop (sync requests.get), /api/health
-        wait would inflate to several seconds. With httpx.AsyncClient it
-        should respond in well under 1s.
-        """
-        with cf.ThreadPoolExecutor(max_workers=4) as ex:
-            f_google = ex.submit(
-                requests.post,
-                f"{BASE_URL}/api/auth/google/session",
-                json={"session_id": "blocking-probe"},
-                timeout=15,
-            )
-            time.sleep(0.05)  # let the google call start first
-            t0 = time.time()
-            f_health = ex.submit(requests.get, f"{BASE_URL}/api/health", timeout=10)
-            health_resp = f_health.result()
-            health_elapsed = time.time() - t0
-            f_google.result()  # drain
-        assert health_resp.status_code == 200
-        assert health_elapsed < 5.0, (
-            f"/api/health took {health_elapsed:.2f}s while google/session was in flight — "
-            "suggests the auth route is blocking the event loop"
-        )
 
 
 # ---------- Sponsor endpoint ----------

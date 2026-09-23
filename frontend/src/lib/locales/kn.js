@@ -256,6 +256,7 @@ export default {
         password: "ಪಾಸ್‌ವರ್ಡ್",
         display_name: "ನಿಮ್ಮ ಹೆಸರು",
         continue_with_google: "Google ನೊಂದಿಗೆ ಮುಂದುವರಿಯಿರಿ",
+        google_failed: "Google ಸೈನ್-ಇನ್ ಪೂರ್ಣಗೊಂಡಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
         or_use_email: "ಅಥವಾ ಇಮೇಲ್ ಬಳಸಿ",
         already_have_account: "ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?",
         need_account: "ಖಾತೆ ಇಲ್ಲವೇ?",

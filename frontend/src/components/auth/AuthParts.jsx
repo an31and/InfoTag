@@ -3,22 +3,22 @@
  * the email/password form, the Google button and the visual side panel
  * stand on their own.
  */
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Tag } from "lucide-react";
+
+import api, { API_BASE } from "../../lib/api";
 
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 /**
- * Trigger the Emergent Google OAuth flow.
- *
- * REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS,
- * THIS BREAKS THE AUTH.
+ * Sign in with Google — the backend redirects to Google's consent screen and
+ * back to /dashboard with our cookie session set.
  */
 function startGoogleAuth() {
-    const redirectUrl = window.location.origin + "/auth/callback";
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    window.location.href = `${API_BASE}/auth/google/login`;
 }
 
 function GoogleIcon() {
@@ -32,17 +32,34 @@ function GoogleIcon() {
     );
 }
 
-export function GoogleAuthButton({ label }) {
+export function GoogleAuthButton({ label, dividerLabel }) {
+    const [enabled, setEnabled] = useState(false);
+
+    useEffect(() => {
+        api.get("/features")
+            .then(({ data }) => setEnabled(!!data?.google_auth))
+            .catch(() => setEnabled(false));
+    }, []);
+
+    if (!enabled) return null;
     return (
-        <Button
-            type="button"
-            variant="outline"
-            className="w-full h-11 rounded-full gap-2"
-            onClick={startGoogleAuth}
-            data-testid="google-login-btn"
-        >
-            <GoogleIcon /> {label}
-        </Button>
+        <>
+            <Button
+                type="button"
+                variant="outline"
+                className="w-full h-11 rounded-full gap-2"
+                onClick={startGoogleAuth}
+                data-testid="google-login-btn"
+            >
+                <GoogleIcon /> {label}
+            </Button>
+
+            <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
+                <span className="flex-1 h-px bg-border" />
+                {dividerLabel}
+                <span className="flex-1 h-px bg-border" />
+            </div>
+        </>
     );
 }
 
@@ -94,13 +111,7 @@ export function EmailPasswordForm({
                 </p>
             </div>
 
-            <GoogleAuthButton label={t("auth.continue_with_google")} />
-
-            <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-                <span className="flex-1 h-px bg-border" />
-                {t("auth.or_use_email")}
-                <span className="flex-1 h-px bg-border" />
-            </div>
+            <GoogleAuthButton label={t("auth.continue_with_google")} dividerLabel={t("auth.or_use_email")} />
 
             {isSignup && (
                 <div className="space-y-1.5">

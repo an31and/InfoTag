@@ -90,7 +90,7 @@ yarn start
 |-------:|-----------------------------------------|------------|------------------------------------------|
 | POST   | `/api/auth/register`                    | none       | email/password signup                    |
 | POST   | `/api/auth/login`                       | none       | email/password login                     |
-| POST   | `/api/auth/google/session`              | none       | Exchange Emergent Google `session_id`    |
+| GET    | `/api/auth/google/login` → `/callback`  | none       | Sign in with Google (OAuth 2.0)          |
 | GET    | `/api/auth/me`                          | cookie JWT | Current user                             |
 | GET    | `/api/auth/export`                      | cookie JWT | Full data export (GDPR)                  |
 | DELETE | `/api/auth/me`                          | cookie JWT | Right-to-be-forgotten (needs password)   |

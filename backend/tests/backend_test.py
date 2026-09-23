@@ -153,15 +153,18 @@ class TestAuth:
         r = requests.get(f"{BASE_URL}/api/auth/me")
         assert r.status_code in (401, 403)
 
-    def test_google_session_invalid(self):
-        r = requests.post(f"{BASE_URL}/api/auth/google/session",
-                          json={"session_id": "invalid-session-xyz"})
-        # 401 expected for invalid session, 502 if upstream unreachable - both acceptable
-        assert r.status_code in (401, 502), r.text
+    def test_google_login_redirects(self):
+        r = requests.get(f"{BASE_URL}/api/auth/google/login", allow_redirects=False)
+        assert r.status_code == 302
+        loc = r.headers["location"]
+        # Straight to Google when configured, back to /login otherwise.
+        assert loc.startswith("https://accounts.google.com/") or "error=google_unavailable" in loc
 
-    def test_google_session_missing_param(self):
-        r = requests.post(f"{BASE_URL}/api/auth/google/session", json={})
-        assert r.status_code == 400
+    def test_google_callback_rejects_missing_state(self):
+        r = requests.get(f"{BASE_URL}/api/auth/google/callback?code=abc&state=xyz", allow_redirects=False)
+        assert r.status_code == 302
+        assert "error=google" in r.headers["location"]
+        assert "access_token" not in r.cookies
 
     def test_logout_clears_cookies(self):
         s = requests.Session()

@@ -24,7 +24,7 @@ from notifications import (  # noqa: E402
     whatsapp_enabled,
 )
 from routes.admin_routes import router as admin_router  # noqa: E402
-from routes.auth_routes import router as auth_router  # noqa: E402
+from routes.auth_routes import google_enabled, router as auth_router  # noqa: E402
 from push import push_enabled  # noqa: E402
 from routes.contact_routes import router as contact_router  # noqa: E402
 from routes.push_routes import router as push_router  # noqa: E402
@@ -119,6 +119,7 @@ async def features() -> dict:
         "twilio": twilio_enabled(),
         "masked_calls": masked_call_enabled(),
         "web_push": push_enabled(),
+        "google_auth": google_enabled(),
         "callback_relay": True,  # always free
         "direct_deep_links": True,  # always free
         "made_in_india": True,
