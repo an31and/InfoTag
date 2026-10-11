@@ -367,7 +367,7 @@ export default function LandingPage() {
                                 </li>
                                 <li className="flex items-center gap-1.5" data-testid="footer-cofounder">
                                     <Users className="h-3.5 w-3.5 text-accent shrink-0" />
-                                    Contributers: <span className="text-white font-semibold">Devesh Sen (Engineer & Social Activist)</span>
+                                    Contributors: <span className="text-white font-semibold">Devesh Sen (Engineer & Social Activist), Shruti Sarjare</span>
                                 </li>
                                 <li className="flex items-center gap-1.5" data-testid="footer-phone">
                                     <Phone className="h-3.5 w-3.5 text-accent shrink-0" />
