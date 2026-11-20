@@ -22,6 +22,8 @@ import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import { Switch } from "../components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Link } from "react-router-dom";
+import { OrgsPanel } from "../components/admin/OrgsPanel";
 import api, { formatApiError } from "../lib/api";
 
 /**
@@ -141,6 +143,16 @@ export default function AdminPage() {
                     <StatCard icon={<HandHeart className="h-5 w-5" />} label="Sponsor intents" value={stats.sponsors_total} />
                 </div>
             )}
+
+            <section className="surface p-6 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 className="font-display font-bold flex items-center gap-2"><TagIcon className="h-4 w-4 text-accent" />Event Mode</h2>
+                    <p className="text-sm text-muted-foreground">Generate permanent QR tags in bulk, print sheets / badges / guest packs, share Digital IDs.</p>
+                </div>
+                <Button asChild className="rounded-full" data-testid="admin-events-link"><Link to="/events">Open Event Mode →</Link></Button>
+            </section>
+
+            <OrgsPanel />
 
             <LandingSectionsPanel />
 

@@ -160,7 +160,7 @@ def _whatsapp_post(payload: dict) -> bool:
         return False
 
 
-def send_whatsapp(to_phone: str, body: str) -> bool:
+def send_whatsapp(to_phone: str, body: str, allow_template: bool = True) -> bool:
     """Send a WhatsApp alert via the Meta Cloud API.  Best-effort, env-gated.
 
     When WHATSAPP_ALERT_TEMPLATE is configured the alert goes out as an
@@ -175,7 +175,9 @@ def send_whatsapp(to_phone: str, body: str) -> bool:
         return False
     to = to_phone.lstrip("+")
 
-    tmpl = whatsapp_alert_template()
+    # Templates outside the free 24h window are billed by Meta — callers that
+    # must stay free (event guests) pass allow_template=False.
+    tmpl = whatsapp_alert_template() if allow_template else None
     if tmpl:
         name, lang = tmpl
         # Template body parameters can't contain newlines/tabs or long runs of
@@ -302,7 +304,49 @@ def notify_owner(owner: dict, subject: str, body: str) -> dict:
     results["email"] = send_email(owner.get("email", ""), subject, body)
     phone = owner.get("phone", "")
     if phone and owner.get("whatsapp_alerts"):
-        results["whatsapp"] = send_whatsapp(phone, f"{subject}\n\n{body}")
+        results["whatsapp"] = send_whatsapp(
+            phone, f"{subject}\n\n{body}", allow_template=not owner.get("_free_only")
+        )
     if phone and owner.get("sms_alerts"):
         results["sms"] = send_sms(phone, f"{subject} — {body}"[:1500])
     return results
+
+
+# ---------------------------------------------------------------------------
+# Non-blocking dispatch
+# ---------------------------------------------------------------------------
+_background: set = set()
+
+
+def notify_owner_background(owner: dict, subject: str, body: str) -> None:
+    """Fire-and-forget ``notify_owner`` on a worker thread.
+
+    The provider calls are blocking HTTP/SMTP requests; running them inline
+    in an async handler stalls every other finder on a single-worker
+    deployment (Render free tier).  Falls back to a direct call when no
+    event loop is running (scripts, sync tests).
+    """
+    import asyncio
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        notify_owner(owner, subject, body)
+        return
+    task = loop.create_task(asyncio.to_thread(notify_owner, owner, subject, body))
+    _background.add(task)
+    task.add_done_callback(_background.discard)
+
+
+def send_whatsapp_background(to_phone: str, body: str) -> None:
+    """Free-form (no paid template) WhatsApp reply, off the request path."""
+    import asyncio
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        send_whatsapp(to_phone, body, allow_template=False)
+        return
+    task = loop.create_task(asyncio.to_thread(send_whatsapp, to_phone, body, False))
+    _background.add(task)
+    task.add_done_callback(_background.discard)

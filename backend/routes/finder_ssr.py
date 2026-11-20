@@ -26,7 +26,8 @@ from fastapi.responses import HTMLResponse
 
 from auth import hash_ip
 from db import get_db
-from notifications import notify_owner
+from notifications import notify_owner_background
+from owners import alert_profile, load_owner
 from push import push_owner
 
 router = APIRouter(prefix="/api/finder", tags=["finder-ssr"])
@@ -894,7 +895,7 @@ async def finder_page(slug: str, request: Request) -> HTMLResponse:
         )
         # Free Web Push scan alert (opt-in via notify_on_scan)
         if doc.get("owner_id"):
-            owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+            owner = await load_owner(db, doc["owner_id"])
             if owner and owner.get("notify_on_scan"):
                 name = doc.get("display_name") or doc.get("label") or "your tag"
                 await push_owner(db, owner["id"], "Info-Tag · tag scanned 👀", f"Someone just scanned “{name}”.", "/dashboard")
@@ -977,7 +978,10 @@ async def finder_action(
     }
     await db.messages.insert_one(msg)
 
-    owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+    import event_service
+
+    await event_service.on_finder_action(db, doc, action_type)
+    owner = await load_owner(db, doc["owner_id"])
     if owner and owner.get("notify_on_message", True):
         text = (
             f"Action: {action_type}\n"
@@ -987,7 +991,7 @@ async def finder_action(
         )
         if loc:
             text += f"Location: https://maps.google.com/?q={loc['lat']},{loc['lng']}\n"
-        notify_owner(owner, f"[Info-Tag] {action_type.replace('_', ' ')} on your tag", text)
+        notify_owner_background(alert_profile(owner), f"[Info-Tag] {action_type.replace('_', ' ')} on your tag", text)
         await push_owner(
             db, owner["id"],
             f"Info-Tag · {action_type.replace('_', ' ')} 📨",
