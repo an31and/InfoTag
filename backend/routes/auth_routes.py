@@ -47,6 +47,7 @@ def _to_public_user(doc: dict) -> dict:
         "locale": doc.get("locale", "en"),
         "auth_provider": doc.get("auth_provider", "password"),
         "role": doc.get("role", "user"),
+        "org_id": doc.get("org_id"),
         "created_at": doc.get("created_at", datetime.now(timezone.utc).isoformat()),
     }
 

@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Bell, LayoutGrid, LogOut, Settings as SettingsIcon, ShieldCheck, Tag } from "lucide-react";
+import { Bell, LayoutGrid, LogOut, QrCode, Settings as SettingsIcon, ShieldCheck, Tag } from "lucide-react";
 
 import { Button } from "../components/ui/button";
 import { useAuth } from "../lib/auth";
@@ -39,6 +39,9 @@ export function AppShell() {
                         <NavTab to="/dashboard" icon={<LayoutGrid className="h-4 w-4" />} label={t("common.dashboard")} testId="nav-dashboard" />
                         <NavTab to="/inbox" icon={<Bell className="h-4 w-4" />} label={t("common.inbox")} testId="nav-inbox" />
                         <NavTab to="/settings" icon={<SettingsIcon className="h-4 w-4" />} label={t("common.settings")} testId="nav-settings" />
+                        {["admin", "organizer"].includes(user?.role) && (
+                            <NavTab to="/events" icon={<QrCode className="h-4 w-4" />} label={t("events.nav")} testId="nav-events" />
+                        )}
                         {user?.role === "admin" && (
                             <NavTab to="/admin" icon={<ShieldCheck className="h-4 w-4" />} label="Admin" testId="nav-admin" />
                         )}
@@ -64,7 +67,7 @@ export function AppShell() {
                     <Outlet />
                 </div>
             </main>
-            <BottomTabs t={t} />
+            <BottomTabs t={t} manager={["admin", "organizer"].includes(user?.role)} />
             {user && (
                 <div className="sr-only" data-testid="signed-in-as">
                     {user.email}
@@ -94,12 +97,18 @@ function NavTab({ to, icon, label, testId }) {
     );
 }
 
-function BottomTabs({ t }) {
+function BottomTabs({ t, manager }) {
     const item =
         "flex flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium";
     return (
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t bg-background/95 backdrop-blur">
-            <div className="grid grid-cols-3">
+            <div className={`grid ${manager ? "grid-cols-4" : "grid-cols-3"}`}>
+                {manager && (
+                    <NavLink to="/events" data-testid="tab-events" className={({ isActive }) => `${item} ${isActive ? "text-accent" : "text-muted-foreground"}`}>
+                        <QrCode className="h-5 w-5" />
+                        {t("events.nav")}
+                    </NavLink>
+                )}
                 <NavLink to="/dashboard" data-testid="tab-dashboard" className={({ isActive }) => `${item} ${isActive ? "text-accent" : "text-muted-foreground"}`}>
                     <LayoutGrid className="h-5 w-5" />
                     {t("common.dashboard")}

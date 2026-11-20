@@ -27,6 +27,9 @@ from routes.admin_routes import router as admin_router  # noqa: E402
 from routes.auth_routes import router as auth_router  # noqa: E402
 from push import push_enabled  # noqa: E402
 from routes.contact_routes import router as contact_router  # noqa: E402
+from routes.event_public import router as event_public_router  # noqa: E402
+from routes.event_routes import router as event_router  # noqa: E402
+from routes.org_routes import router as org_router  # noqa: E402
 from routes.push_routes import router as push_router  # noqa: E402
 from routes.finder_ssr import router as finder_ssr_router  # noqa: E402
 from routes.message_routes import router as message_router  # noqa: E402
@@ -90,6 +93,9 @@ app.include_router(pdf_router)
 app.include_router(sponsor_router)
 app.include_router(finder_ssr_router)
 app.include_router(webhook_router)
+app.include_router(org_router)
+app.include_router(event_router)
+app.include_router(event_public_router)  # /t/ /c/ /e/ /id/ — short public paths
 
 
 @app.get("/api")

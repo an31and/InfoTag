@@ -13,6 +13,8 @@ import { LanguagePrompt } from "@/components/LanguagePrompt";
 import { Toaster } from "@/components/ui/sonner";
 
 import AdminPage from "@/pages/Admin";
+import EventsPage, { EventCreatePage } from "@/pages/Events";
+import EventDetailPage from "@/pages/EventDetail";
 import LandingPage from "@/pages/Landing";
 import AuthPage from "@/pages/Auth";
 import DashboardPage from "@/pages/Dashboard";
@@ -69,6 +71,9 @@ function AppRouter() {
                 <Route path="/tags/:id" element={<TagEditPage />} />
                 <Route path="/tags/:id/qr" element={<TagQRPage />} />
                 <Route path="/tags/:id/medical" element={<TagMedicalPage />} />
+                <Route path="/events" element={<EventManagerOnly><EventsPage /></EventManagerOnly>} />
+                <Route path="/events/new" element={<EventManagerOnly><EventCreatePage /></EventManagerOnly>} />
+                <Route path="/events/:id" element={<EventManagerOnly><EventDetailPage /></EventManagerOnly>} />
                 <Route
                     path="/admin"
                     element={
@@ -95,6 +100,17 @@ function AdminOnly({ children }) {
     return children;
 }
 
+/**
+ * EventManagerOnly — admins and event organisers.  Organisers only ever get
+ * their own organisation's events from the API, so this is UX, not security.
+ */
+function EventManagerOnly({ children }) {
+    const { user, loading } = useAuth();
+    if (loading) return null;
+    if (!user || !["admin", "organizer"].includes(user.role)) return <Navigate to="/dashboard" replace />;
+    return children;
+}
+
 function HomeOrDashboard() {
     const { user, loading } = useAuth();
     if (loading) {
@@ -104,6 +120,7 @@ function HomeOrDashboard() {
             </div>
         );
     }
+    if (user?.role === "organizer") return <Navigate to="/events" replace />;
     return user ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 }
 

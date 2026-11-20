@@ -20,6 +20,7 @@ import hmac
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Query, Request, Response
@@ -85,12 +86,54 @@ async def _open_window_for(db: AsyncIOMotorDatabase, wa_id: str) -> bool:
     return False
 
 
+async def _event_opt_in(db: AsyncIOMotorDatabase, wa_id: str, text: str) -> str | None:
+    """Event guests opt in by sending ``START <code>`` from the claim page.
+
+    Matching on the printed code (not on a scan of every phone number) is
+    exact and indexed; it also proves the guest owns that WhatsApp number.
+    Any later message from a known guest number re-opens the free window.
+    """
+    import event_service as es
+    from notifications import send_whatsapp_background
+
+    now = datetime.now(timezone.utc).isoformat()
+    m = re.match(r"^\s*START\s+([A-Za-z0-9 \-]{6,24})\s*$", text or "", re.I)
+    if m:
+        res = await es.resolve_code(db, m.group(1))
+        owner_id = (res.tag or {}).get("owner_id") if res else None
+        if owner_id and owner_id.startswith("guest_"):
+            await db.guest_owners.update_one(
+                {"id": owner_id},
+                {"$set": {"whatsapp_opt_in": True, "whatsapp_window_opens_at": now,
+                          "wa_id": wa_id, "phone_digits": phone_last_digits(wa_id)}},
+            )
+            send_whatsapp_background(
+                wa_id,
+                f"✅ Info-Tag alerts are ON for {res.code} ({res.event['name']}). "
+                "If someone finds your item we'll message you here. "
+                "अलर्ट चालू हैं — सामान मिलने पर हम यहीं संदेश भेजेंगे।",
+            )
+            return "start"
+    last10 = phone_last_digits(wa_id)
+    if last10:
+        res2 = await db.guest_owners.update_many(
+            {"phone_digits": last10, "whatsapp_opt_in": True},
+            {"$set": {"whatsapp_window_opens_at": now}},
+        )
+        if res2.matched_count:
+            return "refresh"
+    return None
+
+
 async def _process_payload(db: AsyncIOMotorDatabase, payload: dict) -> None:
     for entry in payload.get("entry", []):
         for change in entry.get("changes", []):
             value = change.get("value", {}) or {}
             for msg in value.get("messages", []) or []:
                 wa_id = msg.get("from", "")
+                text = ((msg.get("text") or {}).get("body") or "").strip()
+                if wa_id and await _event_opt_in(db, wa_id, text) == "start":
+                    continue
                 if wa_id and await _open_window_for(db, wa_id):
                     logger.info("WhatsApp window opened for wa_id=%s…", wa_id[:6])
             for status in value.get("statuses", []) or []:

@@ -31,3 +31,6 @@ httpx==0.28.1
 pywebpush>=2.0.0
 py-vapid>=1.9.0
 
+# Event Mode: shaped Hindi (Devanagari) text in vector PDFs
+uharfbuzz>=0.39.0
+fonttools>=4.47.0

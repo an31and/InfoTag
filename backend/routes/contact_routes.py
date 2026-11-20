@@ -25,7 +25,8 @@ from pydantic import BaseModel, Field
 
 from auth import hash_ip
 from db import get_db
-from notifications import masked_call_enabled, notify_owner, start_masked_call
+from notifications import masked_call_enabled, notify_owner_background, start_masked_call
+from owners import alert_profile, load_owner
 from push import push_owner
 
 router = APIRouter(prefix="/api/public/tags", tags=["contact"])
@@ -97,10 +98,10 @@ async def request_callback(slug: str, payload: CallRequestPayload, request: Requ
     }
     await db.messages.insert_one(msg)
 
-    owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+    owner = await load_owner(db, doc["owner_id"])
     if owner and owner.get("notify_on_message", True):
-        notify_owner(
-            owner,
+        notify_owner_background(
+            alert_profile(owner),
             "[Info-Tag] Call-back request on your tag",
             (
                 f"Tag: {doc.get('display_name') or doc.get('label')}\n"
@@ -130,7 +131,7 @@ async def masked_call(slug: str, payload: CallRequestPayload, request: Request) 
         # Graceful downgrade — the UI should offer the free callback path.
         return {"ok": False, "fallback": "callback", "reason": "Masked calling is not configured"}
 
-    owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+    owner = await load_owner(db, doc["owner_id"])
     owner_phone = (owner or {}).get("phone", "")
     if not owner_phone:
         return {"ok": False, "fallback": "callback", "reason": "Owner has no phone on file"}

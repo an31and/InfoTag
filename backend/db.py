@@ -51,6 +51,10 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     # Feedback moderation queue
     await db.feedback.create_index("created_at")
     await db.feedback.create_index("is_public")
+    # Event Mode (organisations, events, signed batches, claims, guest owners)
+    from event_service import ensure_event_indexes
+
+    await ensure_event_indexes(db)
 
 
 async def seed_admin_and_demo(db: AsyncIOMotorDatabase) -> None:
