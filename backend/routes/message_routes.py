@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+import recovery
 from auth import get_current_user, hash_ip
 from db import get_db
 from models import MessageCreatePayload, MessageOut
@@ -98,6 +99,7 @@ async def post_finder_message(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.messages.insert_one(msg)
+    await recovery.record_finder_contact(db, doc, payload.action_type, request)
 
     # Alert the owner on every channel they enabled — email + WhatsApp + SMS.
     # Each channel is env-gated and best-effort, so nothing here can fail the

@@ -24,6 +24,7 @@ import SettingsPage from "@/pages/Settings";
 import StoriesPage from "@/pages/Stories";
 import { FinderRedirect } from "@/pages/FinderRedirect";
 import ClaimPage from "@/pages/Claim";
+import RecoveryConfirmPage from "@/pages/RecoveryConfirm";
 import { MedicalDisclaimerPage, PrivacyPage, TermsPage } from "@/pages/Legal";
 
 /**
@@ -49,6 +50,8 @@ function AppRouter() {
             <Route path="/tag/:slug" element={<FinderRedirect />} />
             <Route path="/claim/:slug" element={<ClaimPage />} />
             <Route path="/stories" element={<StoriesPage />} />
+            {/* Login-free, one-time owner confirmation link (token in #fragment) */}
+            <Route path="/recovery/confirm" element={<RecoveryConfirmPage />} />
 
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />

@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+import recovery
 from auth import get_current_user
 from db import get_db
 
@@ -45,7 +46,8 @@ async def admin_stats(admin: dict = Depends(_require_admin)) -> dict:
     scans_7d = await db.scans.count_documents({"scanned_at": {"$gte": week_ago}})
 
     found_reports = await db.messages.count_documents({"action_type": "found"})
-    items_recovered = await db.tags.count_documents({"status": "found"})
+    # Same number the public counter shows: owner-confirmed + legacy manual "found".
+    items_recovered = await recovery.public_recovered_count(db)
     tags_lost = await db.tags.count_documents({"status": "lost"})
 
     users_total = await db.users.count_documents({})
@@ -59,6 +61,13 @@ async def admin_stats(admin: dict = Depends(_require_admin)) -> dict:
         "visitors": {"total": visitors_total, "today": visitors_today, "last_7d": visitors_7d},
         "scans": {"total": scans_total, "today": scans_today, "last_7d": scans_7d},
         "found": {"reports": found_reports, "items_recovered": items_recovered, "currently_lost": tags_lost},
+        # Counts only — no names, numbers or identities. Confirmed and
+        # probable are separate keys and are never summed.
+        "recovery": {
+            "total_scans": scans_total,
+            **(await recovery.recovery_counts(db)),
+            "legacy_manual_found": await recovery.legacy_found_tags(db),
+        },
         "users_total": users_total,
         "tags_total": tags_total,
         "messages_total": messages_total,
@@ -70,7 +79,11 @@ async def admin_stats(admin: dict = Depends(_require_admin)) -> dict:
 
 @router.get("/scans/daily")
 async def scans_daily(days: int = 14, admin: dict = Depends(_require_admin)) -> list[dict]:
-    """Scans-per-day for the last N days (for a small trend chart)."""
+    """Scans-per-day for the last N days (for a small trend chart).
+
+    Each row also carries ``recovered`` — owner-confirmed recoveries whose
+    ``resolved_at`` falls on that day (never probable/unconfirmed ones).
+    """
     db = get_db()
     days = max(1, min(days, 90))
     start = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -82,7 +95,13 @@ async def scans_daily(days: int = 14, admin: dict = Depends(_require_admin)) -> 
         ]
     )
     rows = await cursor.to_list(days + 1)
-    return [{"day": r["_id"], "count": r["count"]} for r in rows]
+    by_day: dict[str, dict] = {r["_id"]: {"day": r["_id"], "count": r["count"], "recovered": 0} for r in rows}
+    async for c in db.recoveries.find(
+        {"status": recovery.OWNER_CONFIRMED_FOUND, "resolved_at": {"$gte": start}}, {"_id": 0, "resolved_at": 1}
+    ):
+        day = c["resolved_at"][:10]
+        by_day.setdefault(day, {"day": day, "count": 0, "recovered": 0})["recovered"] += 1
+    return [by_day[d] for d in sorted(by_day)]
 
 
 # ---------------------------------------------------------------------------
