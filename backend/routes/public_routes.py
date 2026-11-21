@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
+import recovery
 from auth import hash_ip
 from db import get_db
 from models import FeedbackCreatePayload
@@ -92,7 +93,9 @@ async def public_stats() -> dict:
     visitors_today = await db.visits.count_documents({"day": today})
     scans_total = await db.scans.count_documents({})
     found_reports = await db.messages.count_documents({"action_type": "found"})
-    items_recovered = await db.tags.count_documents({"status": "found"})
+    # Owner-confirmed recoveries (+ tags owners manually marked "found" before
+    # tracking existed). "Probable / unconfirmed" cases are never counted here.
+    items_recovered = await recovery.public_recovered_count(db)
     tags_active = await db.tags.count_documents({"status": {"$ne": "found"}})
     return {
         "visitors_total": visitors_total,
