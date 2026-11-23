@@ -24,6 +24,7 @@ from typing import Optional
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
+import recovery
 from auth import hash_ip
 from db import get_db
 from notifications import notify_owner_background
@@ -893,6 +894,7 @@ async def finder_page(slug: str, request: Request) -> HTMLResponse:
                 "user_agent": (request.headers.get("user-agent") or "")[:200],
             }
         )
+        await recovery.record_scan(db, doc, now)
         # Free Web Push scan alert (opt-in via notify_on_scan)
         if doc.get("owner_id"):
             owner = await load_owner(db, doc["owner_id"])
@@ -977,6 +979,7 @@ async def finder_action(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.messages.insert_one(msg)
+    await recovery.record_finder_contact(db, doc, action_type, request)
 
     import event_service
 

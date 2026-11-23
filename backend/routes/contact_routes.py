@@ -23,6 +23,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+import recovery
 from auth import hash_ip
 from db import get_db
 from notifications import masked_call_enabled, notify_owner_background, start_masked_call
@@ -97,6 +98,7 @@ async def request_callback(slug: str, payload: CallRequestPayload, request: Requ
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.messages.insert_one(msg)
+    await recovery.record_finder_contact(db, doc, "call_request", request)
 
     owner = await load_owner(db, doc["owner_id"])
     if owner and owner.get("notify_on_message", True):
@@ -154,6 +156,7 @@ async def masked_call(slug: str, payload: CallRequestPayload, request: Request) 
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
     )
+    await recovery.record_finder_contact(db, doc, "call_request", request)
     if not ok:
         return {"ok": False, "fallback": "callback", "reason": "Call could not be placed"}
     return {"ok": True}

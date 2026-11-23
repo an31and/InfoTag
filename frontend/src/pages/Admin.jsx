@@ -5,6 +5,7 @@ import {
     Eye,
     EyeOff,
     HandHeart,
+    HeartHandshake,
     LayoutList,
     MessageSquareText,
     PackageCheck,
@@ -25,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Link } from "react-router-dom";
 import { OrgsPanel } from "../components/admin/OrgsPanel";
 import api, { formatApiError } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 
 /**
  * AdminPage — founder-only portal.
@@ -34,6 +36,7 @@ import api, { formatApiError } from "../lib/api";
  * re-verifies the role server-side.
  */
 export default function AdminPage() {
+    const { t } = useI18n();
     const [stats, setStats] = useState(null);
     const [daily, setDaily] = useState([]);
     const [feedback, setFeedback] = useState(null);
@@ -144,6 +147,8 @@ export default function AdminPage() {
                 </div>
             )}
 
+            {stats?.recovery && <RecoveryPanel r={stats.recovery} />}
+
             <section className="surface p-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 className="font-display font-bold flex items-center gap-2"><TagIcon className="h-4 w-4 text-accent" />Event Mode</h2>
@@ -156,29 +161,26 @@ export default function AdminPage() {
 
             <LandingSectionsPanel />
 
-            {/* Scan trend — dependency-free mini bar chart */}
+            {/* Scan trend + confirmed-recovery line — dependency-free mini chart */}
             <section className="surface p-6">
-                <div className="flex items-center gap-2 mb-4">
-                    <BarChart3 className="h-4 w-4 text-accent" />
-                    <h2 className="font-display font-bold">Scans — last 14 days</h2>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
+                    <div className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4 text-accent" />
+                        <h2 className="font-display font-bold">{t("recovery.chart_title")}</h2>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+                        <span className="inline-flex items-center gap-1">
+                            <span className="inline-block w-3 h-3 rounded-sm bg-accent/70" /> {t("recovery.chart_scans")}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                            <span className="inline-block w-3 h-0.5 bg-emerald-500" /> {t("recovery.chart_recovered")}
+                        </span>
+                    </div>
                 </div>
                 {daily.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No scans yet. Share some tags!</p>
                 ) : (
-                    <div className="flex items-end gap-1.5 h-28" data-testid="scan-trend">
-                        {daily.map((d) => {
-                            const max = Math.max(...daily.map((x) => x.count), 1);
-                            return (
-                                <div key={d.day} className="flex-1 flex flex-col items-center gap-1" title={`${d.day}: ${d.count}`}>
-                                    <div
-                                        className="w-full rounded-t bg-accent/70 min-h-[3px]"
-                                        style={{ height: `${Math.max(4, (d.count / max) * 100)}%` }}
-                                    />
-                                    <span className="text-[9px] text-muted-foreground">{d.day.slice(8)}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <TrendChart daily={daily} />
                 )}
             </section>
 
@@ -316,6 +318,114 @@ function LandingSectionsPanel() {
                     ))}
                 </div>
             )}
+        </section>
+    );
+}
+
+/**
+ * TrendChart — scan bars with an overlaid line of owner-confirmed
+ * recoveries per day. The line has its own scale (recoveries are far fewer
+ * than scans); exact numbers are in each column's tooltip / sr-only text.
+ */
+function TrendChart({ daily }) {
+    const maxScans = Math.max(...daily.map((x) => x.count), 1);
+    const maxRec = Math.max(...daily.map((x) => x.recovered || 0), 1);
+    const n = daily.length;
+    const points = daily
+        .map((d, i) => `${((i + 0.5) / n) * 100},${100 - ((d.recovered || 0) / maxRec) * 90}`)
+        .join(" ");
+    return (
+        <div data-testid="scan-trend">
+            <div className="relative h-28">
+                <div className="absolute inset-0 flex items-end gap-1.5">
+                    {daily.map((d) => (
+                        <div
+                            key={d.day}
+                            className="flex-1 h-full flex items-end"
+                            title={`${d.day}: ${d.count} scans · ${d.recovered || 0} recovered`}
+                        >
+                            <div
+                                className="w-full rounded-t bg-accent/70 min-h-[3px]"
+                                style={{ height: `${Math.max(4, (d.count / maxScans) * 100)}%` }}
+                            />
+                            <span className="sr-only">{`${d.day}: ${d.count} scans, ${d.recovered || 0} recovered`}</span>
+                        </div>
+                    ))}
+                </div>
+                <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                    data-testid="recovery-trend-line"
+                >
+                    <polyline
+                        points={points}
+                        fill="none"
+                        stroke="rgb(16 185 129)"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                        vectorEffect="non-scaling-stroke"
+                    />
+                </svg>
+            </div>
+            <div className="flex gap-1.5 mt-1">
+                {daily.map((d) => (
+                    <span key={d.day} className="flex-1 text-center text-[9px] text-muted-foreground">
+                        {d.day.slice(8)}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/**
+ * RecoveryPanel — honest recovery numbers. Confirmed and probable are shown
+ * side by side and never summed; the rate uses confirmed only.
+ */
+function RecoveryPanel({ r }) {
+    const { t } = useI18n();
+    const rate = r.recovery_rate == null ? "—" : `${Math.round(r.recovery_rate * 1000) / 10}%`;
+    return (
+        <section className="surface p-6" aria-labelledby="recovery-panel-title" data-testid="recovery-panel">
+            <div className="flex items-center gap-2">
+                <HeartHandshake className="h-4 w-4 text-emerald-500" />
+                <h2 id="recovery-panel-title" className="font-display font-bold">{t("recovery.admin_title")}</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">{t("recovery.admin_subtitle")}</p>
+            <div className="mt-4 grid grid-cols-2 lg:grid-cols-5 gap-4">
+                <StatCard icon={<ScanLine className="h-5 w-5" />} label={t("recovery.admin_total_scans")} value={r.total_scans} testId="rec-total-scans" />
+                <StatCard
+                    icon={<MessageSquareText className="h-5 w-5" />}
+                    label={t("recovery.admin_finder_contacts")}
+                    value={r.finder_contacts}
+                    sub={`${r.awaiting_owner} ${t("recovery.admin_awaiting")}`}
+                    testId="rec-finder-contacts"
+                />
+                <StatCard
+                    icon={<PackageCheck className="h-5 w-5 text-emerald-500" />}
+                    label={t("recovery.admin_confirmed")}
+                    value={r.confirmed_recoveries}
+                    sub={`${r.legacy_manual_found} ${t("recovery.admin_legacy")}`}
+                    testId="rec-confirmed"
+                />
+                <StatCard
+                    icon={<PackageCheck className="h-5 w-5 text-amber-500" />}
+                    label={t("recovery.admin_probable")}
+                    value={r.probable_unconfirmed}
+                    sub={`${r.owner_not_found} ${t("recovery.admin_not_found")}`}
+                    testId="rec-probable"
+                />
+                <StatCard
+                    icon={<BarChart3 className="h-5 w-5" />}
+                    label={t("recovery.admin_rate")}
+                    value={rate}
+                    sub={t("recovery.admin_rate_hint")}
+                    testId="rec-rate"
+                />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">{t("recovery.admin_public_note")}</p>
         </section>
     );
 }

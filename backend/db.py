@@ -55,6 +55,18 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     from event_service import ensure_event_indexes
 
     await ensure_event_indexes(db)
+    # Recovery tracking — separate collections, so existing tags need no
+    # migration (a tag with no case simply has no recovery history).
+    await db.recoveries.create_index("id", unique=True)
+    await db.recoveries.create_index([("tag_id", 1), ("status", 1)])
+    await db.recoveries.create_index("owner_id")
+    await db.recoveries.create_index([("status", 1), ("next_action_at", 1)])
+    await db.recoveries.create_index("resolved_at")
+    await db.recovery_events.create_index("recovery_id")
+    await db.recovery_events.create_index("tag_id")
+    await db.recovery_tokens.create_index("token_hash", unique=True)
+    await db.recovery_tokens.create_index("recovery_id")
+    await db.recovery_tokens.create_index("purge_at", expireAfterSeconds=0)
 
 
 async def seed_admin_and_demo(db: AsyncIOMotorDatabase) -> None:

@@ -292,22 +292,28 @@ def start_masked_call(finder_phone: str, owner_phone: str) -> bool:
 # ---------------------------------------------------------------------------
 # Owner alert fan-out — one call notifies on every channel the owner enabled
 # ---------------------------------------------------------------------------
-def notify_owner(owner: dict, subject: str, body: str) -> dict:
+def notify_owner(owner: dict, subject: str, body: str, urgent: bool = False) -> dict:
     """Send an alert via email + WhatsApp + SMS based on the owner's prefs.
 
     Each channel is independently best-effort and env-gated, so a missing
     provider never breaks the request path.  Returns per-channel results.
+
+    ``urgent=True`` (child / pet / medical tags when a finder reaches out)
+    ignores the owner's WhatsApp/SMS opt-in flags and uses every channel the
+    deployment has configured, as long as the owner has a phone on file.
     """
     results = {"email": False, "whatsapp": False, "sms": False}
     if not owner:
         return results
     results["email"] = send_email(owner.get("email", ""), subject, body)
     phone = owner.get("phone", "")
-    if phone and owner.get("whatsapp_alerts"):
-        results["whatsapp"] = send_whatsapp(
-            phone, f"{subject}\n\n{body}", allow_template=not owner.get("_free_only")
-        )
-    if phone and owner.get("sms_alerts"):
+    # Event guests are "free only": never a paid template or SMS, even when
+    # urgent — they only opted in to free channels.
+    free_only = bool(owner.get("_free_only"))
+    force = urgent and not free_only
+    if phone and (force or owner.get("whatsapp_alerts")):
+        results["whatsapp"] = send_whatsapp(phone, f"{subject}\n\n{body}", allow_template=not free_only)
+    if phone and (force or owner.get("sms_alerts")):
         results["sms"] = send_sms(phone, f"{subject} — {body}"[:1500])
     return results
 

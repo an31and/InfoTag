@@ -195,3 +195,12 @@ python scripts/bench_tokens.py   # 1M-verification load test
 * CSV guest import (names on guest-pack cards; phone only with consent).
 * Cloudflare Pages Function "cold-start shield" for `/t/*`.
 * Personal-data purge per event (tags stay; owner contact data is deleted).
+
+## 12. Recovery tracking on event tags
+
+Event tags take part in owner-confirmed recovery tracking. See
+`docs/RECOVERY_TRACKING.md` → *Event Mode tags*. In short:
+
+* Organiser **Mark returned** never counts as a confirmed recovery.
+* The guest's own Digital ID **"I got my item back"** does count, but only
+  after a finder contacted them.

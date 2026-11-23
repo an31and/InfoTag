@@ -14,6 +14,7 @@ import {
     Tag as TagIcon,
 } from "lucide-react";
 
+import { RecoveryPrompts } from "../components/RecoveryPrompts";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
@@ -79,6 +80,9 @@ export default function DashboardPage() {
                     <Plus className="h-4 w-4" /> {t("dashboard.new_tag")}
                 </Button>
             </div>
+
+            {/* "Did you get it back?" — only shows when a finder reached out */}
+            <RecoveryPrompts />
 
             {/* Stat strip */}
             <div className="grid sm:grid-cols-3 gap-4" data-testid="dashboard-stats">

@@ -23,6 +23,7 @@ import ratelimit
 from auth import get_current_user
 from db import get_db
 from notifications import notify_owner_background, whatsapp_business_number
+import recovery
 from owners import alert_profile, load_owner
 from print_engine import CAPTION, qr_matrix
 from routes.finder_ssr import _resolve_lang, esc, render_claimed, render_layout, render_not_found
@@ -214,6 +215,8 @@ async def _count_scan(db, request: Request, res: es.Resolved) -> None:
     await es.bump(db, res.event["id"], scans=1)
     if res.tag:
         await db.tags.update_one({"id": res.tag["id"]}, {"$inc": {"scan_count": 1}, "$set": {"last_scan_at": es.utcnow()}})
+        # Registered tags only: unregistered stickers have no owner (and no row).
+        await recovery.record_scan(db, res.tag)
 
 
 def _claim_form(lang: str, res: es.Resolved, error: str = "", v: Optional[dict] = None) -> str:
@@ -632,4 +635,6 @@ async def digital_id_returned(token: str, request: Request, k: str = Form("")):
     if res.tag.get("event_status") != "returned":
         await db.tags.update_one({"id": res.tag["id"]}, {"$set": {"event_status": "returned", "status": "found", "returned_at": es.utcnow()}})
         await es.bump(db, res.event["id"], returned=1)
+        # The guest is the owner (private manage key) → confirms an open case.
+        await recovery.confirm_from_owner_action(db, res.tag, "owner_digital_id")
     return RedirectResponse(f"/id/{res.token}?k={quote(k)}&done=1", status_code=303)

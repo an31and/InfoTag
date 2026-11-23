@@ -9,6 +9,7 @@ import qrcode
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+import recovery
 from auth import generate_slug, get_current_user, hash_ip
 from db import get_db
 from models import (
@@ -126,6 +127,10 @@ async def delete_tag(tag_id: str, user: dict = Depends(_current_user_dep)) -> di
     await db.profiles.delete_many({"tag_id": tag_id})
     await db.messages.delete_many({"tag_id": tag_id})
     await db.scans.delete_many({"tag_id": tag_id})
+    rec_ids = await db.recoveries.distinct("id", {"tag_id": tag_id})
+    await db.recoveries.delete_many({"tag_id": tag_id})
+    await db.recovery_events.delete_many({"tag_id": tag_id})
+    await db.recovery_tokens.delete_many({"recovery_id": {"$in": rec_ids}})
     return {"ok": True}
 
 
@@ -248,6 +253,7 @@ async def get_public_tag(slug: str, request: Request) -> dict:
                 "user_agent": ua,
             }
         )
+        await recovery.record_scan(db, doc, now)
         # Free Web Push scan alert (opt-in via notify_on_scan)
         if doc.get("owner_id"):
             owner = await load_owner(db, doc["owner_id"])
