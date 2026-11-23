@@ -55,6 +55,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from notifications import notify_owner
+from owners import alert_profile, is_guest, load_owner
 from push import push_owner
 from urls import resolve_site_url
 
@@ -256,7 +257,7 @@ async def record_finder_contact(
             return await db.recoveries.find_one({"id": case["id"]}, {"_id": 0})
         case.update(update)
 
-        owner = await db.users.find_one({"id": tag["owner_id"]}, {"_id": 0})
+        owner = await load_owner(db, tag["owner_id"])  # account holder or event guest
         if high:
             await _send_urgent_alert(db, owner, tag, case, now)
         else:
@@ -294,7 +295,7 @@ def confirm_link(site: str, token: str) -> str:
     return f"{site}/recovery/confirm#t={token}"
 
 
-def _prompt_text(tag: dict, link: str, kind: str, high: bool) -> tuple[str, str]:
+def _prompt_text(tag: dict, link: str, kind: str, high: bool, guest: bool = False) -> tuple[str, str]:
     name = _tag_name(tag)
     if high:
         q_hi, q_en = "क्या वे सुरक्षित मिल गए?", "Have they been found safe?"
@@ -310,14 +311,19 @@ def _prompt_text(tag: dict, link: str, kind: str, high: bool) -> tuple[str, str]
         "• हाँ, मिल गया / Yes, found\n"
         "• नहीं मिला / Not found\n"
         "• अभी नहीं / Not yet\n\n"
-        "यह लिंक 7 दिन तक और एक बार ही काम करेगा। आप डैशबोर्ड से भी जवाब दे सकते हैं।\n"
-        "This link works once and expires in 7 days. You can also answer from your dashboard.\n"
+        "यह लिंक 7 दिन तक और एक बार ही काम करेगा।\n"
+        "This link works once and expires in 7 days.\n"
     )
+    if not guest:  # event guests have no account / dashboard
+        body += "आप डैशबोर्ड से भी जवाब दे सकते हैं। / You can also answer from your dashboard.\n"
     return subject, body
 
 
 async def _dispatch(owner: Optional[dict], subject: str, body: str, urgent: bool = False) -> dict:
     # notify_owner does blocking HTTP — keep it off the event loop.
+    # alert_profile() keeps event guests on free channels only (email + an
+    # open WhatsApp window) — notify_owner never forces paid channels for them.
+    owner = alert_profile(owner) if owner else owner
     return await asyncio.to_thread(notify_owner, owner, subject, body, urgent)
 
 
@@ -326,7 +332,7 @@ async def _send_prompt(db, owner, tag, case, *, kind: str, now: datetime, site: 
         return
     token = await issue_token(db, case, now)
     link = confirm_link(site or resolve_site_url(None), token)
-    subject, body = _prompt_text(tag, link, kind, case.get("priority") == "high")
+    subject, body = _prompt_text(tag, link, kind, case.get("priority") == "high", guest=is_guest(owner.get("id")))
     results = await _dispatch(owner, subject, body)
     await push_owner(db, owner["id"], subject.replace("[Info-Tag] ", "Info-Tag · "), _tag_name(tag), "/dashboard")
     if kind == "prompt":
@@ -417,6 +423,30 @@ async def apply_owner_response(db, case: dict, answer: str, source: str, now: Op
     return await db.recoveries.find_one({"id": case["id"]}, {"_id": 0})
 
 
+async def confirm_from_owner_action(db, tag: dict, source: str) -> Optional[dict]:
+    """The owner said "I got it back" through another owner-only channel
+    (e.g. an event guest's private Digital ID link).
+
+    Confirms the tag's latest *answerable* case.  If no finder ever contacted
+    the owner there is nothing to confirm, so nothing is counted — the same
+    rule as everywhere else.  Never raises.
+    """
+    try:
+        cases = (
+            await db.recoveries.find(
+                {"tag_id": tag["id"], "status": {"$in": list(ANSWERABLE_STATUSES)}}, {"_id": 0}
+            )
+            .sort("created_at", -1)
+            .to_list(1)
+        )
+        if not cases:
+            return None
+        return await apply_owner_response(db, cases[0], "found", source)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("recovery.confirm_from_owner_action failed: %s", exc)
+        return None
+
+
 async def consume_token(db, token: str, now: Optional[datetime] = None) -> dict:
     """Atomically mark a link token used.  Returns the token row."""
     now = now or _now()
@@ -488,7 +518,7 @@ async def _process_due_case(db, case: dict, now: datetime, site: str, done: dict
     if not tag or not tag.get("owner_id"):
         await _claim(db, case, {"next_action_at": None, "updated_at": now.isoformat()})
         return
-    owner = await db.users.find_one({"id": tag["owner_id"]}, {"_id": 0})
+    owner = await load_owner(db, tag["owner_id"])
     site = site or resolve_site_url(None) or case.get("site_url", "")
 
     if case["status"] == FINDER_CONTACTED:
@@ -575,9 +605,16 @@ async def legacy_found_tags(db) -> int:
 
     These pre-date recovery tracking; they're still owner-set, so the public
     counter includes them — but never twice for the same tag.
+
+    Event-Mode tags are excluded: an organiser's help-desk "mark returned"
+    also sets status='found', but that is not the owner's confirmation.
+    (A guest's own "I got my item back" confirms an open case instead — see
+    ``confirm_from_owner_action``.)
     """
     confirmed_tag_ids = await db.recoveries.distinct("tag_id", {"status": OWNER_CONFIRMED_FOUND})
-    return await db.tags.count_documents({"status": "found", "id": {"$nin": confirmed_tag_ids}})
+    return await db.tags.count_documents(
+        {"status": "found", "id": {"$nin": confirmed_tag_ids}, "event_id": {"$exists": False}}
+    )
 
 
 async def public_recovered_count(db) -> int:

@@ -11,7 +11,9 @@ import recovery
 from auth import get_current_user, hash_ip
 from db import get_db
 from models import MessageCreatePayload, MessageOut
-from notifications import notify_owner
+import event_service
+from notifications import notify_owner_background
+from owners import alert_profile, load_owner
 from push import push_owner
 
 router = APIRouter(prefix="/api", tags=["messages"])
@@ -104,7 +106,8 @@ async def post_finder_message(
     # Alert the owner on every channel they enabled — email + WhatsApp + SMS.
     # Each channel is env-gated and best-effort, so nothing here can fail the
     # finder's request.
-    owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+    await event_service.on_finder_action(db, doc, payload.action_type)
+    owner = await load_owner(db, doc["owner_id"])
     if owner and owner.get("notify_on_message", True):
         link = (
             f"Action: {payload.action_type}\n"
@@ -114,7 +117,7 @@ async def post_finder_message(
         )
         if msg.get("location"):
             link += f"Location: https://maps.google.com/?q={msg['location'].get('lat')},{msg['location'].get('lng')}\n"
-        notify_owner(owner, f"[Info-Tag] {payload.action_type.replace('_', ' ')} on your tag", link)
+        notify_owner_background(alert_profile(owner), f"[Info-Tag] {payload.action_type.replace('_', ' ')} on your tag", link)
         await push_owner(
             db, owner["id"],
             f"Info-Tag · {payload.action_type.replace('_', ' ')} 📨",

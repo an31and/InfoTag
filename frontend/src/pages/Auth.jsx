@@ -39,12 +39,10 @@ export default function AuthPage({ mode = "login" }) {
         }
         setSubmitting(true);
         try {
-            if (isSignup) {
-                await register(email, password, displayName);
-            } else {
-                await login(email, password);
-            }
-            const next = location.state?.from?.pathname || "/dashboard";
+            const signedIn = isSignup ? await register(email, password, displayName) : await login(email, password);
+            // Event organisers land on their events, everyone else on the dashboard.
+            const home = signedIn?.role === "organizer" ? "/events" : "/dashboard";
+            const next = location.state?.from?.pathname || home;
             navigate(next, { replace: true });
         } catch (err) {
             setError(formatApiError(err));

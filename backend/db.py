@@ -51,6 +51,10 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     # Feedback moderation queue
     await db.feedback.create_index("created_at")
     await db.feedback.create_index("is_public")
+    # Event Mode (organisations, events, signed batches, claims, guest owners)
+    from event_service import ensure_event_indexes
+
+    await ensure_event_indexes(db)
     # Recovery tracking — separate collections, so existing tags need no
     # migration (a tag with no case simply has no recovery history).
     await db.recoveries.create_index("id", unique=True)

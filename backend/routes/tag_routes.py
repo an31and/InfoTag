@@ -21,6 +21,7 @@ from models import (
     TagUpdatePayload,
 )
 from notifications import masked_call_enabled
+from owners import load_owner
 from push import push_owner
 from urls import resolve_site_url
 
@@ -114,9 +115,15 @@ async def update_tag(
 @router.delete("/tags/{tag_id}")
 async def delete_tag(tag_id: str, user: dict = Depends(_current_user_dep)) -> dict:
     db = get_db()
+    doc = await db.tags.find_one({"id": tag_id, "owner_id": user["id"]}, {"_id": 0, "claim_id": 1})
     res = await db.tags.delete_one({"id": tag_id, "owner_id": user["id"]})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Tag not found")
+    # Event tags: once every tag of a claimed pack is deleted, release the
+    # claim so the (permanent) printed sticker can be claimed again.
+    claim_id = (doc or {}).get("claim_id")
+    if claim_id and not await db.tags.find_one({"claim_id": claim_id}, {"_id": 1}):
+        await db.claims.delete_one({"_id": claim_id})
     await db.profiles.delete_many({"tag_id": tag_id})
     await db.messages.delete_many({"tag_id": tag_id})
     await db.scans.delete_many({"tag_id": tag_id})
@@ -192,7 +199,7 @@ async def build_contact_block(db, doc: dict) -> dict | None:
     if not doc.get("owner_id"):
         return None
     if contact.get("mode") == "direct":
-        owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0, "phone": 1})
+        owner = await load_owner(db, doc["owner_id"], {"phone": 1})
         phone = (owner or {}).get("phone", "")
         if not phone:
             # Direct mode without a phone on file degrades to masked relay.
@@ -249,7 +256,7 @@ async def get_public_tag(slug: str, request: Request) -> dict:
         await recovery.record_scan(db, doc, now)
         # Free Web Push scan alert (opt-in via notify_on_scan)
         if doc.get("owner_id"):
-            owner = await db.users.find_one({"id": doc["owner_id"]}, {"_id": 0})
+            owner = await load_owner(db, doc["owner_id"])
             if owner and owner.get("notify_on_scan"):
                 name = doc.get("display_name") or doc.get("label") or "your tag"
                 await push_owner(db, owner["id"], "Info-Tag · tag scanned 👀", f"Someone just scanned “{name}”.", "/dashboard")

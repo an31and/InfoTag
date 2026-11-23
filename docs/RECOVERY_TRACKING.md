@@ -127,3 +127,24 @@ traffic, a free external pinger can hit `/api/health` every 10–14 minutes.
 * `SITE_URL`, which already exists, should be set in production so that
   reminder links are absolute. As a fallback, the origin of the finder's
   request is remembered on the case.
+
+## Event Mode tags
+
+* Scans of **registered** event tags open or attach to a case. Unregistered
+  stickers have no owner and no database row, so they don't.
+* Event guests have no account. Owners are loaded through
+  `load_owner()` + `alert_profile()`, which means:
+  * Guests get the confirmation link by email, and by WhatsApp only while
+    their free 24-hour window is open.
+  * Guests **never** get paid templates or SMS, even for urgent alerts.
+  * Guest messages contain no dashboard hint.
+* An organiser's help-desk **Mark returned** is **not** an owner
+  confirmation. It doesn't confirm a case, and event tags are excluded from
+  the public "legacy manual found" count.
+* A guest's own **"I got my item back"** on their private Digital ID link
+  *is* the owner. It confirms the tag's open case
+  (`resolution_source = owner_digital_id`), but only if a finder actually
+  reached out. Otherwise nothing is counted.
+* Admin "total scans" comes from the `scans` collection. Event tags keep
+  their own per-event scan counters (`events.stats`), so event scans show on
+  the event page rather than in that total.

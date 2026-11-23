@@ -58,9 +58,10 @@ def env(monkeypatch):
 
     monkeypatch.setattr(rec, "notify_owner", fake_notify)
     # Existing finder alerts: silence them, they're not under test here.
-    monkeypatch.setattr(message_routes, "notify_owner", lambda *a, **k: {})
-    monkeypatch.setattr(finder_ssr, "notify_owner", lambda *a, **k: {})
-    monkeypatch.setattr(contact_routes, "notify_owner", lambda *a, **k: {})
+    for mod in (message_routes, finder_ssr, contact_routes):
+        for name in ("notify_owner", "notify_owner_background"):
+            if hasattr(mod, name):
+                monkeypatch.setattr(mod, name, lambda *a, **k: {})
 
     app = FastAPI()
     for r in (tag_routes.router, message_routes.router, contact_routes.router, recovery_routes.router,
@@ -351,15 +352,27 @@ class TestHighPriority:
         import notifications
 
         calls = []
-        monkeypatch.setattr(notifications, "send_email", lambda *a: calls.append("email") or True)
-        monkeypatch.setattr(notifications, "send_whatsapp", lambda *a: calls.append("wa") or True)
-        monkeypatch.setattr(notifications, "send_sms", lambda *a: calls.append("sms") or True)
+        monkeypatch.setattr(notifications, "send_email", lambda *a, **k: calls.append("email") or True)
+        monkeypatch.setattr(notifications, "send_whatsapp", lambda *a, **k: calls.append("wa") or True)
+        monkeypatch.setattr(notifications, "send_sms", lambda *a, **k: calls.append("sms") or True)
         owner = {"email": "o@x.in", "phone": "+919800000001", "whatsapp_alerts": False, "sms_alerts": False}
         notifications.notify_owner(owner, "s", "b")
         assert calls == ["email"]
         calls.clear()
         notifications.notify_owner(owner, "s", "b", urgent=True)
         assert calls == ["email", "wa", "sms"]
+
+    def test_urgent_never_forces_paid_channels_for_event_guests(self, monkeypatch):
+        import notifications
+        from owners import alert_profile
+
+        calls = []
+        monkeypatch.setattr(notifications, "send_email", lambda *a, **k: calls.append("email") or True)
+        monkeypatch.setattr(notifications, "send_whatsapp", lambda *a, **k: calls.append(("wa", k)) or True)
+        monkeypatch.setattr(notifications, "send_sms", lambda *a, **k: calls.append("sms") or True)
+        guest = alert_profile({"id": "guest_1", "email": "g@x.in", "phone": "+919800000002", "whatsapp_opt_in": False})
+        notifications.notify_owner(guest, "s", "b", urgent=True)
+        assert calls == ["email"]  # no forced WhatsApp template, no SMS
 
     def test_medical_consent_gating_unchanged(self, env):
         db = env["db"]

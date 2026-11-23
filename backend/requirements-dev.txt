@@ -1,0 +1,4 @@
+# Offline unit tests (in-memory MongoDB) — not needed in production.
+-r requirements.txt
+pytest-asyncio>=0.23
+mongomock-motor>=0.0.29

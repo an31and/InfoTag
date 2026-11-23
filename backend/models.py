@@ -50,7 +50,8 @@ class UserPublic(BaseModel):
     whatsapp_window_opens_at: Optional[str] = None
     locale: str = "en"
     auth_provider: str = "password"  # password | google | both
-    role: str = "user"  # user | admin
+    role: str = "user"  # user | organizer | admin
+    org_id: Optional[str] = None  # organizers: the organisation they manage
     created_at: str
 
 
