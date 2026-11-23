@@ -9,6 +9,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 import logging  # noqa: E402
 import os  # noqa: E402
+import asyncio  # noqa: E402
 from contextlib import asynccontextmanager  # noqa: E402
 
 from fastapi import FastAPI  # noqa: E402
@@ -33,6 +34,8 @@ from routes.message_routes import router as message_router  # noqa: E402
 from routes.pdf_routes import router as pdf_router  # noqa: E402
 from routes.profile_routes import router as profile_router  # noqa: E402
 from routes.public_routes import router as public_router  # noqa: E402
+from routes.recovery_routes import router as recovery_router  # noqa: E402
+from recovery import run_recovery_sweeper  # noqa: E402
 from routes.sponsor_routes import router as sponsor_router  # noqa: E402
 from routes.tag_routes import router as tag_router  # noqa: E402
 from routes.webhook_routes import router as webhook_router  # noqa: E402
@@ -46,11 +49,16 @@ async def lifespan(app: FastAPI):
     db = get_db()
     await ensure_indexes(db)
     await seed_admin_and_demo(db)
+    # Recovery reminders: a light in-process loop (no worker needed). It runs
+    # one catch-up sweep right away — on Render's free tier that's what
+    # delivers reminders that fell due while the instance was asleep.
+    sweeper = asyncio.create_task(run_recovery_sweeper(get_db))
     logger.info(
         "Info-Tag API ready. Email=%s WhatsApp=%s Twilio=%s",
         email_enabled(), whatsapp_enabled(), twilio_enabled(),
     )
     yield
+    sweeper.cancel()
     await close_db()
 
 
@@ -83,6 +91,7 @@ app.include_router(admin_router)
 app.include_router(contact_router)
 app.include_router(push_router)
 app.include_router(public_router)
+app.include_router(recovery_router)
 app.include_router(tag_router)
 app.include_router(profile_router)
 app.include_router(message_router)
